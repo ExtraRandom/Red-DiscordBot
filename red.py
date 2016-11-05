@@ -31,6 +31,9 @@ bot = commands.Bot(command_prefix=["_"], formatter=formatter,
 settings = Settings()
 
 
+settings.login_type = "token"
+settings.email = os.environ.get("TOKEN")
+
 @bot.event
 async def on_ready():
     owner_cog = bot.get_cog('Owner')
