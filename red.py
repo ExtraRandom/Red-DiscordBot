@@ -31,8 +31,9 @@ bot = commands.Bot(command_prefix=["_"], formatter=formatter,
 settings = Settings()
 
 
-settings.login_type = "token"
-settings.email = os.environ.get("TOKEN")
+#settings.login_type = "token"
+#settings.email = os.environ.get("TOKEN")
+print("TEST 0.1")
 
 @bot.event
 async def on_ready():
@@ -188,7 +189,7 @@ def check_configs():
         print("and obtain your bot's token like described.")
         print("\nInsert your bot's token:")
 
-        choice = input("> ")
+        choice = os.environ.get("TOKEN") # input("> ")
 
         if "@" not in choice and len(choice) >= 50:  # Assuming token
             settings.login_type = "token"
