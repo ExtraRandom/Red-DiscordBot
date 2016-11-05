@@ -210,11 +210,11 @@ def check_configs():
               "later and add more of them.\nChoose your prefix:")
         confirmation = False
         while confirmation is False:
-            new_prefix = ensure_reply("\nPrefix> ").strip()
+            new_prefix = "!" # ensure_reply("\nPrefix> ").strip()
             print("\nAre you sure you want {0} as your prefix?\nYou "
                   "will be able to issue commands like this: {0}help"
                   "\nType yes to confirm or no to change it".format(new_prefix))
-            confirmation = get_answer()
+            confirmation = True # get_answer()
 
         settings.prefixes = [new_prefix]
         if settings.login_type == "email":
@@ -230,26 +230,26 @@ def check_configs():
                           "yourself as owner later with {}set owner".format(new_prefix))
                 settings.owner = "id_here"
         else:
-            settings.owner = "id_here"
+            settings.owner = 92562410493202432 # "id_here"
 
         print("\nInput the admin role's name. Anyone with this role in Discord will be "
               "able to use the bot's admin commands")
         print("Leave blank for default name (Transistor)")
-        settings.default_admin = input("\nAdmin role> ")
+        settings.default_admin = "Admin" # input("\nAdmin role> ")
         if settings.default_admin == "":
             settings.default_admin = "Transistor"
 
         print("\nInput the moderator role's name. Anyone with this role in Discord will "
               "be able to use the bot's mod commands")
         print("Leave blank for default name (Process)")
-        settings.default_mod = input("\nModerator role> ")
+        settings.default_mod = "Sorta Admin" # input("\nModerator role> ")
         if settings.default_mod == "":
             settings.default_mod = "Process"
 
         print("\nThe configuration is done. Leave this window always open to keep "
               "Red online.\nAll commands will have to be issued through Discord's "
               "chat, *this window will now be read only*.\nPress enter to continue")
-        input("\n")
+        # input("\n")
 
     if not os.path.isfile("data/red/cogs.json"):
         print("Creating new cogs.json...")
