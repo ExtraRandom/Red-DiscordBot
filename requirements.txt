@@ -1,6 +1,5 @@
 pip
 cffi
-git+git://github.com/tuffy/python-audio-tools.git
 git+git://github.com/Rapptz/discord.py.git#egg=discord.py[voice]
 youtube_dl
 imgurpython
