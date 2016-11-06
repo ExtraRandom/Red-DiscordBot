@@ -33,7 +33,7 @@ settings = Settings()
 
 #settings.login_type = "token"
 #settings.email = os.environ.get("TOKEN")
-print("TEST 0.3")
+# print("TEST 0.3")
 
 @bot.event
 async def on_ready():
