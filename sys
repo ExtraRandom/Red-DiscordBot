@@ -1,4 +1,6 @@
 #!/bin/bash
+# Version 0.1
+
 
 BOT = "Red-DiscordBot/red.py"
 HELP = "Args: git, bot"
