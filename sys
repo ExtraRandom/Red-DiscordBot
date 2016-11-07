@@ -15,7 +15,7 @@ else
     elif [ "$1" = "bot" ]; then
         cd $DIR
         python3 $BOT &
-    elif [ "$1" = "kill" ]
+    elif [ "$1" = "kill" ]; then
         kill -f red.py
     else
         echo $HELP
