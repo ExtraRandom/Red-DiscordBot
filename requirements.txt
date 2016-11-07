@@ -3,3 +3,5 @@ cffi
 git+git://github.com/Rapptz/discord.py.git#egg=discord.py[voice]
 youtube_dl
 imgurpython
+bs4
+requests
