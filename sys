@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 0.1
+# Version 0.2
 
 DIR="Red-DiscordBot"
 BOT="Red-DiscordBot/red.py"
@@ -12,6 +12,7 @@ else
         cd $DIR
         git pull
         cd ..
+        ./run 
     elif [ "$1" = "bot" ]; then
         python3 $BOT
     else
