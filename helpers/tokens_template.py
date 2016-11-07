@@ -16,4 +16,4 @@ Sign into steam website and get the key from here https://steamcommunity.com/dev
 If you don't wish to use the CS:GO command that relies on this, leave it as just ""
 """
 
-wa_key = ""
+web_api = ""
