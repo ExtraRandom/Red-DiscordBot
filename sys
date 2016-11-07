@@ -2,7 +2,7 @@
 # Version 0.2
 
 DIR="Red-DiscordBot"
-BOT="Red-DiscordBot/red.py"
+BOT="red.py"
 HELP="Args: git, bot"
 
 if [ -z "$*" ]; then
