@@ -12,8 +12,8 @@ else
         cd $DIR
         git pull
         cd ..
-        ./run 
     elif [ "$1" = "bot" ]; then
+        cd $DIR
         python3 $BOT
     else
         echo $HELP
