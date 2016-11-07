@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 0.2
+# Version 0.3
 
 DIR="Red-DiscordBot"
 BOT="red.py"
@@ -12,9 +12,11 @@ else
         cd $DIR
         git pull
         cd ..
+		echo "Run ./run to update 'sys's"
     elif [ "$1" = "bot" ]; then
         cd $DIR
         python3 $BOT &
+		cd ..
     elif [ "$1" = "kill" ]; then
         pkill -f red.py
     else

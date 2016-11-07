@@ -2,12 +2,9 @@ import asyncio
 import logging
 import bs4
 import requests
-# import json
 import os
 
-from helpers import descriptions as desc, tokens as t  # , time_calculations as tc, simplify as s, settings
-
-# from datetime import datetime
+from helpers import descriptions as desc, tokens as t
 
 import aiohttp
 from discord.ext import commands
@@ -24,7 +21,6 @@ class Games:
 
     @commands.command(name="mc", description=desc.mc_ip, brief=desc.mc_ip)
     async def minecraft_ip(self, ip: str):
-        # TODO add a check to see if the server is modded
         try:
             server = MinecraftServer.lookup(ip)
             status = server.status()
@@ -44,7 +40,6 @@ class Games:
             except Exception:
                 players = "None"
 
-            # TODO formatting
             msg = """ __*Status of {}*__
 
 Version: {}
@@ -81,7 +76,6 @@ Description: {}
                         searching = data['result']['matchmaking']['searching_players']
                         search_time = data['result']['matchmaking']['search_seconds_avg']
 
-                        # TODO formatting
                         msg = """CSGO Status
 
 Scheduler Status: {}
@@ -192,7 +186,6 @@ Average Search Time: {} seconds
         medals = 0
 
         for item in stats:
-            # print(item)
             if str(item) == "<td>Games Won</td>" and games_won == 0:
                 games_won = doc.select('div[id="quick-play"] div[class="card-stat-block"] tbody td'
                                        '')[count].nextSibling.getText()

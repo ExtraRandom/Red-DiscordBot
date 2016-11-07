@@ -31,10 +31,6 @@ bot = commands.Bot(command_prefix=["_"], formatter=formatter,
 settings = Settings()
 
 
-#settings.login_type = "token"
-#settings.email = os.environ.get("TOKEN")
-# print("TEST 0.3")
-
 @bot.event
 async def on_ready():
     owner_cog = bot.get_cog('Owner')
@@ -46,24 +42,17 @@ async def on_ready():
         bot.uptime = int(time.perf_counter())
     if settings.login_type == "token" and settings.owner == "id_here":
         await set_bot_owner()
-    print('------')
-    print("{} is now online.".format(bot.user.name))
-    print('------')
-    print("Connected to:")
-    print("{} servers".format(servers))
-    print("{} channels".format(channels))
-    print("{} users".format(users))
-    print("\n{}/{} active cogs with {} commands".format(
-        len(bot.cogs), total_cogs, len(bot.commands)))
-    prefix_label = "Prefixes:" if len(bot.command_prefix) > 1 else "Prefix:"
-    print("{} {}\n".format(prefix_label, " ".join(bot.command_prefix)))
+    print('\n------')
+    print("{} online.".format(bot.user.name))
+    print("Serving: {} servers, {} channels and {} users.".format(servers, channels, users))
+    print("{}/{} active cogs with {} commands".format(len(bot.cogs), total_cogs, len(bot.commands)))
+
     if settings.login_type == "token":
-        print("------")
         print("Use this url to bring your bot to a server:")
         url = await get_oauth_url()
         bot.oauth_url = url
         print(url)
-        print("------")
+        print("------\n")
     await bot.get_cog('Owner').disable_commands()
 
 
