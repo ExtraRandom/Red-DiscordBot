@@ -1,15 +1,17 @@
 #!/bin/bash
 # Version 0.1
 
-
-BOT = "Red-DiscordBot/red.py"
-HELP = "Args: git, bot"
+DIR="Red-DiscordBot"
+BOT="Red-DiscordBot/red.py"
+HELP="Args: git, bot"
 
 if [ -z "$*" ]; then
 	echo $HELP
 else
     if [ "$1" = "git" ]; then
+        cd $DIR
         git pull
+        cd ..
     elif [ "$1" = "bot" ]; then
         python3 $BOT
     else
