@@ -90,7 +90,7 @@ Average Search Time: {} seconds
                 await self.bot.say("Error getting data - Ask Owner to check WebAPI key is correct")
                 log.warn("Invalid WebAPI key")
         else:
-            await self.bot.say("This command is disabled currently. Ask the bot owner to add a Steam WebAPI key to "
+            await self.bot.say("This command is disabled currently. Ask the bot owner to add a Steam WebAPI key in "
                                "tokens.py for it to be enabled")
 
     @commands.group(pass_context=True, description=desc.steam_status, brief=desc.steam_status)
