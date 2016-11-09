@@ -5,3 +5,4 @@ __pycache__
 *.exe
 *.dll
 update - Copy.bat
+.idea/*
