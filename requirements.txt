@@ -6,3 +6,4 @@ imgurpython
 bs4
 requests
 mcstatus
+aiohttp

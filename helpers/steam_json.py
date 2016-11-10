@@ -1,7 +1,7 @@
 import json
 
 file = "helpers/steam_id.json"
-pd2_file = "helpers/pd2_weapons.json"
+pd2_file = "helpers/pd2_info.json"
 
 """
 For reading and writing to steam_id.json
@@ -11,7 +11,7 @@ For reading and writing to steam_id.json
 def read(user):
     with open(file) as data_file:
         data = json.load(data_file)
-        # TODO check user exists
+        # TODO check user exists - if no stats exist then user doesnt own the game
         return data[user]
 
 """
@@ -50,10 +50,13 @@ def weapon_read(data):
     # http://wiki.modworkshop.net/Payday_2/Weapon_IDs
     jdata = json.loads(data)
 
-    #with open(pd2_file) as out_file2:
-    #    data = json.dump(out_file2)
+    with open(pd2_file) as out_file2:
+        pd2_data = json.load(out_file2)
 
     stats = len(jdata['playerstats']['stats'])
+    achievements = len(jdata['playerstats']['achievements'])
+    weapons = len(pd2_data)
+
 
     highest_kills = 0
     highest_gun = ""
@@ -66,26 +69,70 @@ def weapon_read(data):
                 highest_kills = int(jdata['playerstats']['stats'][index]['value'])
                 highest_gun = str(jdata['playerstats']['stats'][index]['name'])
 
+    if pd2_data['Weapons'][highest_gun]:
+        highest_gun = pd2_data['Weapons'][highest_gun]
+
     if highest_gun == "" or highest_kills == 0:
         return "N/A", "N/A"
     else:
         return highest_gun, highest_kills
 
 
-def test_json(data):
-
+def armor_read(data):
     jdata = json.loads(data)
+
+    with open(pd2_file) as out_file2:
+        pd2_data = json.load(out_file2)
+
     stats = len(jdata['playerstats']['stats'])
 
-    count = 0
+    # TODO better variable names
+
+    highest = 0
+    highest_armor = ""
 
     for index in range(stats):
-        if str(jdata['playerstats']['stats'][index]['name']).startswith('weapon_kills_'):
-            count += 1
-            # print(str(jdata['playerstats']['stats'][index]['name']))
+        # print("arm: {}, use: {}".format(highest_armor, highest))
+        if str(jdata['playerstats']['stats'][index]['name']).startswith('armor_used_level_'):
+            if int(jdata['playerstats']['stats'][index]['value']) > highest:
+                highest = int(jdata['playerstats']['stats'][index]['value'])
+                highest_armor = str(jdata['playerstats']['stats'][index]['name'])
 
-    # print(count)
-    return count
+    if pd2_data['Armor'][highest_armor]:
+        highest_armor = pd2_data['Armor'][highest_armor]
 
+    if highest_armor == "" or highest == 0:
+        return "N/A", "N/A"
+    else:
+        return highest_armor, highest
+
+
+def gadget_read(data):
+    jdata = json.loads(data)
+
+    with open(pd2_file) as out_file2:
+        pd2_data = json.load(out_file2)
+
+    stats = len(jdata['playerstats']['stats'])
+
+    # TODO better variable names
+
+    highest = 0
+    highest_gadget = ""
+
+    for index in range(stats):
+        # print("arm: {}, use: {}".format(highest_gadget, highest))
+        if str(jdata['playerstats']['stats'][index]['name']).startswith('gadget_used_'):
+            if int(jdata['playerstats']['stats'][index]['value']) > highest:
+                highest = int(jdata['playerstats']['stats'][index]['value'])
+                highest_gadget = str(jdata['playerstats']['stats'][index]['name'])
+
+    if pd2_data['Gadget'][highest_gadget]:
+        highest_gadget = pd2_data['Gadget'][highest_gadget]
+
+    if highest_gadget == "" or highest == 0:
+        return "N/A", "N/A"
+    else:
+        return highest_gadget, highest
 
 

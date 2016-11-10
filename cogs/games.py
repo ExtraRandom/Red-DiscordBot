@@ -60,9 +60,19 @@ Description: {}
     async def pd2(self, ctx):
         run = True
         user = str(ctx.message.author)
-        # print(user)
+        input = ctx.message.content
 
-        user_id = steam_json.read(user)
+        if input.replace(" ", "") != "!pd2":
+            entered_name = input.split()[1:]
+            entered_name = ' '.join(entered_name)
+            try:
+                user_id = steam_json.read(entered_name)
+                user = entered_name
+            except KeyError as e:
+                await self.bot.say("Error: User with name '{}' not found on list.".format(entered_name))
+                return
+        else:
+            user_id = steam_json.read(user)
 
         if not t.web_api == "" and run:
             try:
@@ -77,8 +87,6 @@ Description: {}
                         # TODO add possible error catching
                         # TODO finish command
 
-                        var = steam_json.test_json(data)
-
                         heist_s = steam_json.steam_read(data, "heist_success")
                         heist_f = steam_json.steam_read(data, "heist_failed")
 
@@ -89,10 +97,6 @@ Description: {}
                         diff_dw = steam_json.steam_read(data, "difficulty_overkill_290")
                         diff_my = steam_json.steam_read(data, "difficulty_easy_wish")
                         diff_od = steam_json.steam_read(data, "difficulty_sm_wish")
-
-                        norm_vh_diff = diff_norm + diff_h + diff_vh
-                        ovk_may_diff = diff_ovk + diff_my
-                        dw_od_diff = diff_dw + diff_od
 
                         kills_cop = steam_json.steam_read(data, "enemy_kills_cop")
                         kills_fbi = steam_json.steam_read(data, "enemy_kills_fbi")
@@ -146,29 +150,41 @@ Description: {}
                         other_kills = total_kills - (tank_kills + gang_mob_kills + civ_kills + shield_sniper_cloaker +
                                                      cop_swat + fbi)
 
+                        norm_vh_diff = diff_norm + diff_h + diff_vh
+                        ovk_may_diff = diff_ovk + diff_my
+                        dw_od_diff = diff_dw + diff_od
+
                         most_used_gun, most_used_kills = steam_json.weapon_read(data)
+
+                        most_used_gadget, most_used_gadget_uses = steam_json.gadget_read(data)
+                        most_used_armor, most_used_armor_uses = steam_json.armor_read(data)
 
                         msg = """PD2 Stats for {}:
 
-Heists:           *{}W / {}L*
-Difficulty:      *{} Normal-VH,
-                       {} Overkill-Mayhem,
-                       {} DW+*
+Heists:            *{}W / {}L*
+Difficulty:       *{} Normal-VH,
+                         {} Overkill-Mayhem,
+                         {} DW+*
 
-Kills:              *FBI {},  Cop/SWAT {},
-                       Shield {},  Sniper {},  Cloaker {}
-                       Bulldozers {},  Gang/Mob {},
-                       Civilian {},  Other {}
-                       Favourite Gun: {} - {} kills*
+Kills:                *FBI {},  Cop/SWAT {},
+                         Shield {},  Sniper {},  Cloaker {}
+                         Bulldozers {},  Gang/Mob {},
+                         Civilian {},  Other {}*
+
+Fav. Gun:        *{} - {} kills*
+Fav. Gadget:   *{} - {} uses*
+Fav. Armor:    *{} - {} uses*
                         """.format(user, heist_s, heist_f, norm_vh_diff, ovk_may_diff, dw_od_diff,
                                    fbi, cop_swat, kills_shield, kills_sniper, kills_cloaker, tank_kills, gang_mob_kills,
-                                   civ_kills, other_kills, most_used_gun, most_used_kills)
+                                   civ_kills, other_kills, most_used_gun, most_used_kills, most_used_gadget,
+                                   most_used_gadget_uses, most_used_armor, most_used_armor_uses)
 
                         await self.bot.say(msg)
 
             except KeyError as e:
                 log.warn("KeyError: {}".format(e))
-                await self.bot.say("Error: Your tag was not found on list. Use `!addsteam` to add it.")
+                await self.bot.say("Error: User '{}' was not found on list. Use `!addsteam` to add it -- "
+                                   "THIS CURRENTLY ISN'T IMPLEMENTED .")
                 # TODO write the addsteam command
 
             # except Exception as e:

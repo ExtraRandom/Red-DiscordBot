@@ -1,8 +1,10 @@
 *.pyc
 __pycache__
-!data/trivia/*
-!data/audio/playlists/*
 *.exe
 *.dll
 update - Copy.bat
 .idea/*
+helpers/tokens.py
+run.bat
+data/*
+data/red/*
