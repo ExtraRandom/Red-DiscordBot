@@ -14,7 +14,7 @@ def read(user):
         # TODO check user exists
         return data[user]
 
-
+"""
 def write(user):
 
     return 0
@@ -25,7 +25,7 @@ def write(user):
 
     with open(file) as out_file:
         data = json.dump(out_file)
-
+"""
 
 """
 For reading the .json containing stat info
