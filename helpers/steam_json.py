@@ -50,10 +50,8 @@ def weapon_read(data):
     # http://wiki.modworkshop.net/Payday_2/Weapon_IDs
     jdata = json.loads(data)
 
-    with open(pd2_file) as out_file2:
-        data = json.dump(out_file2)
-
-
+    #with open(pd2_file) as out_file2:
+    #    data = json.dump(out_file2)
 
     stats = len(jdata['playerstats']['stats'])
 
