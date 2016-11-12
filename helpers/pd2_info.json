@@ -15,7 +15,7 @@
         "weapon_kills_x_deagle": "Akimbo Deagle Pistols",
         "weapon_kills_x_g17": "Akimbo Chimano 88 Pistols",
         "weapon_kills_x_b92fs": "Akimbo Bernetti 9 Pistols",
-        "weapon_kills_x_packrat": "Akimbo Contractor Pistols -- not on the api",
+        "weapon_kills_x_packrat": "Akimbo Contractor Pistols",
         "weapon_kills_huntsman": "Mosconi 12G Shotgun",
         "weapon_kills_aa12": "Steakout 12G Shotgun",
         "weapon_kills_b682": "Joceline O/U 12G Shotgun",
@@ -33,7 +33,7 @@
         "weapon_kills_baka": "Micro Uzi SMG",
         "weapon_kills_scorpion": "Cobra SMG",
         "weapon_kills_polymer": "Kross Vertex SMG",
-        "weapon_kills_schakal": "Jackal SMG -- not on the api",
+        "weapon_kills_schakal": "Jackal SMG",
         "weapon_kills_tec9": "Blaster 9mm SMG",
         "weapon_kills_mp9": "CMP SMG",
         "weapon_kills_m1928": "Chicago Typewriter SMG",
@@ -88,7 +88,7 @@
         "weapon_kills_model70": "Platypus 70 Sniper",
         "weapon_kills_wa2000": "Lebensauger .308 Sniper",
         "weapon_kills_msr": "Rattlesnake Sniper",
-        "weapon_kills_desertfox": "Desertfox Sniper -- not on the api",
+        "weapon_kills_desertfox": "Desertfox Sniper",
         "weapon_kills_mosin": "Nagant Sniper",
         "weapon_kills_winchester1874": "Repeater 1874 Sniper",
         "weapon_kills_ppk": "Gruber Kurz Pistol",
@@ -100,7 +100,7 @@
         "weapon_kills_peacemaker": "Peacemaker .45 Revolver",
         "weapon_kills_b92fs": "Bernetti 9 Pistol",
         "weapon_kills_g22c": "Chimano Custom Pistol",
-        "weapon_kills_packrat": "Contractor Pistol -- not on the api",
+        "weapon_kills_packrat": "Contractor Pistol",
         "weapon_kills_c96": "Broomstick Pistol",
         "weapon_kills_pl14": "White Streak Pistol",
         "weapon_kills_mateba": "Matever .357",
@@ -114,7 +114,7 @@
         "gadget_used_ammo_bag": "Ammo Bag",
         "gadget_used_doctor_bag": "Doctor Bag",
         "gadget_used_trip_mine": "Trip Mine",
-        "gadget_used_sentry_gun": "Sentry Gun",
+        "gadget_used_sentry_gun": "Senweapontry Gun",
         "gadget_used_ecm_jammer": "ECM Jammer",
         "gadget_used_first_aid": "First Aid Kit",
         "gadget_used_body_bag": "Body Bag Case",
@@ -128,5 +128,32 @@
         "armor_used_level_5": "Flak Jacket",
         "armor_used_level_6": "Combined Tatical Vest",
         "armor_used_level_7": "Improved Combined Tatical Vest"
+    },
+    "Kills": [
+        "cop", "fbi", "fbi_swat", "fbi_heavy_swat", "swat", "heavy_swat", "city_swat", "security", "gensec", "gangster", "sniper", "shield", "spooc",
+        "tank", "taser", "mobster", "mobster_boss", "civilian", "civilian_female", "tank_hw", "hector_boss", "hector_boss_no_armor", "tank_green",
+        "tank_black", "tank_skull", "hostage_rescue", "murkywater", "phalanx_minion", "biker_boss", "cop_female", "medic", "chavez_boss"
+    ],
+    "Difficulty": [
+        "normal", "hard", "overkill", "overkill_145", "overkill_290", "easy_wish", "sm_wish"
+    ],
+    "Masks":{
+        "mask_used_": "",
+        "mask_used_": "",
+        "mask_used_": ""
+    },
+    "Achievements":{
+        "hot_wheels":{
+            "name": "Coming in Hot",
+            "description": "On day 1 of the Watchdogs job, don't let the cops shoot and destroy the escape vehicle."
+        },
+        "":{
+            "name": "",
+            "description": ""
+        },
+        "":{
+            "name": "",
+            "description": ""
+        }
     }
 }

@@ -90,76 +90,35 @@ Description: {}
                         heist_s = steam_json.steam_read(data, "heist_success")
                         heist_f = steam_json.steam_read(data, "heist_failed")
 
-                        diff_norm = steam_json.steam_read(data, "difficulty_normal")
-                        diff_h = steam_json.steam_read(data, "difficulty_hard")
-                        diff_vh = steam_json.steam_read(data, "difficulty_overkill")
-                        diff_ovk = steam_json.steam_read(data, "difficulty_overkill_145")
-                        diff_dw = steam_json.steam_read(data, "difficulty_overkill_290")
-                        diff_my = steam_json.steam_read(data, "difficulty_easy_wish")
-                        diff_od = steam_json.steam_read(data, "difficulty_sm_wish")
+                        kills = steam_json.read_startswith(data, "enemy_kills_")
+                        diffs = steam_json.read_startswith(data, "difficulty_")
 
-                        kills_cop = steam_json.steam_read(data, "enemy_kills_cop")
-                        kills_fbi = steam_json.steam_read(data, "enemy_kills_fbi")
-                        kills_fbi_swat = steam_json.steam_read(data, "enemy_kills_fbi_swat")
-                        kills_fbi_heavy_swat = steam_json.steam_read(data, "enemy_kills_fbi_heavy_swat")
-                        kills_swat = steam_json.steam_read(data, "enemy_kills_swat")
-                        kills_heavy_swat = steam_json.steam_read(data, "enemy_kills_heavy_swat")
-                        kills_city_swat = steam_json.steam_read(data, "enemy_kills_city_swat")
-                        kills_security = steam_json.steam_read(data, "enemy_kills_security")
-                        kills_gensec = steam_json.steam_read(data, "enemy_kills_gensec")
-                        kills_gangster = steam_json.steam_read(data, "enemy_kills_gangster")
-                        kills_sniper = steam_json.steam_read(data, "enemy_kills_sniper")
-                        kills_shield = steam_json.steam_read(data, "enemy_kills_shield")
-                        kills_cloaker = steam_json.steam_read(data, "enemy_kills_spooc")
-                        kills_tank = steam_json.steam_read(data, "enemy_kills_tank")
-                        kills_taser = steam_json.steam_read(data, "enemy_kills_taser")
-                        kills_mobster = steam_json.steam_read(data, "enemy_kills_mobster")
-                        kills_mobster_boss = steam_json.steam_read(data, "enemy_kills_mobster_boss")
-                        kills_civilian = steam_json.steam_read(data, "enemy_kills_civilian")
-                        kills_civilian_female = steam_json.steam_read(data, "enemy_kills_civilian")
-                        kills_tank_hw = steam_json.steam_read(data, "enemy_kills_tank_hw")
-                        kills_hector_boss = steam_json.steam_read(data, "enemy_kills_hector_boss")
-                        kills_hector_boss_no_armor = steam_json.steam_read(data, "enemy_kills_hector_boss_no_armor")
-                        kills_tank_green = steam_json.steam_read(data, "enemy_kills_tank_green")
-                        kills_tank_black = steam_json.steam_read(data, "enemy_kills_tank_black")
-                        kills_tank_skull = steam_json.steam_read(data, "enemy_kills_tank_skull")
-                        kills_hostage_rescue = steam_json.steam_read(data, "enemy_kills_hostage_rescue")
-                        kills_murkywater = steam_json.steam_read(data, "enemy_kills_murkywater")
-                        kills_winters_minion = steam_json.steam_read(data, "enemy_kills_phalanx_minion")
-                        kills_biker_boss = steam_json.steam_read(data, "enemy_kills_biker_boss")
-                        kills_cop_female = steam_json.steam_read(data, "enemy_kills_cop_female")
-                        kills_medic = steam_json.steam_read(data, "enemy_kills_medic")
-                        kills_chavez_boss = steam_json.steam_read(data, "enemy_kills_chavez_boss")
+                        norm_vh_diff = diffs[0] + diffs[1] + diffs[2]
+                        ovk_may_diff = diffs[3] + diffs[5]
+                        dw_od_diff = diffs[4] + diffs[6]
 
-                        total_kills = kills_cop + kills_fbi + kills_fbi_swat + kills_fbi_heavy_swat + kills_swat +\
-                            kills_heavy_swat + kills_city_swat + kills_security + kills_gensec + kills_gangster +\
-                            kills_sniper + kills_shield + kills_cloaker + kills_tank + kills_taser + kills_mobster +\
-                            kills_mobster_boss + kills_civilian + kills_civilian_female + kills_tank_hw +\
-                            kills_hector_boss + kills_hector_boss_no_armor + kills_tank_green + kills_tank_black +\
-                            kills_tank_skull + kills_hostage_rescue + kills_murkywater + kills_winters_minion +\
-                            kills_biker_boss + kills_cop_female + kills_medic + kills_chavez_boss
+                        fbi = kills[1] + kills[2] + kills[3]
+                        cop_swat = kills[0] + kills[29] + kills[7] + kills[6] + kills[5]
+                        tank_kills = kills[13] + kills[23] + kills[24] + kills[22] + kills[19]
+                        gang_mob_kills = kills[16] + kills[15] + kills[9]
+                        civ_kills = kills[18] + kills[17]
+                        kills_shield = kills[11]
+                        kills_sniper = kills[10]
+                        kills_cloaker = kills[12]
 
-                        tank_kills = kills_tank + kills_tank_skull + kills_tank_green + kills_tank_hw + kills_tank_black
-                        civ_kills = kills_civilian + kills_civilian_female
-                        gang_mob_kills = kills_gangster + kills_mobster_boss + kills_mobster
+                        total_kills = 0
+                        for i in range(0, len(kills)):
+                            total_kills = total_kills + kills[i]
 
-                        cop_swat = kills_cop + kills_cop_female + kills_city_swat + kills_heavy_swat + kills_swat
-                        fbi = kills_fbi + kills_fbi_heavy_swat + kills_fbi_swat
-
-                        shield_sniper_cloaker = kills_sniper + kills_shield + kills_cloaker
-                        other_kills = total_kills - (tank_kills + gang_mob_kills + civ_kills + shield_sniper_cloaker +
-                                                     cop_swat + fbi)
-
-                        norm_vh_diff = diff_norm + diff_h + diff_vh
-                        ovk_may_diff = diff_ovk + diff_my
-                        dw_od_diff = diff_dw + diff_od
+                        other_kills = total_kills - (fbi + cop_swat + tank_kills + gang_mob_kills + civ_kills +
+                                                     kills_cloaker + kills_shield + kills_sniper)
 
                         most_used_gun, most_used_kills = steam_json.weapon_read(data)
 
                         most_used_gadget, most_used_gadget_uses = steam_json.gadget_read(data)
                         most_used_armor, most_used_armor_uses = steam_json.armor_read(data)
 
-                        msg = """PD2 Stats for {}:
+                        msg = """Payday 2 Stats for {}:
 
 Heists:            *{}W / {}L*
 Difficulty:       *{} Normal-VH,

@@ -36,8 +36,6 @@ def steam_read(data, stat_name):
     jdata = json.loads(data)
     stats = len(jdata['playerstats']['stats'])
 
-    # print(stats)
-
     for index in range(stats):
         if jdata['playerstats']['stats'][index]['name'] == stat_name:
             return jdata['playerstats']['stats'][index]['value']
@@ -46,22 +44,46 @@ def steam_read(data, stat_name):
     return 0
 
 
-def weapon_read(data):
-    # http://wiki.modworkshop.net/Payday_2/Weapon_IDs
+def read_startswith(data, startswith):
     jdata = json.loads(data)
 
     with open(pd2_file) as out_file2:
         pd2_data = json.load(out_file2)
 
     stats = len(jdata['playerstats']['stats'])
-    achievements = len(jdata['playerstats']['achievements'])
-    weapons = len(pd2_data)
 
+    result = []
+
+    for index in range(stats):
+        index_str = str(jdata['playerstats']['stats'][index]['name'])
+        if index_str.startswith(startswith):
+
+            if startswith == "enemy_kills_":
+                for word in range(len(pd2_data['Kills'])):
+                    if index_str == ("enemy_kills_" + pd2_data['Kills'][word]):
+                        result.append(jdata['playerstats']['stats'][index]['value'])
+
+            if startswith == "difficulty_":
+                for word in range(len(pd2_data['Difficulty'])):
+                    if index_str.endswith(pd2_data['Difficulty'][word]):
+                        result.append(jdata['playerstats']['stats'][index]['value'])
+
+    return result
+
+
+def weapon_read(data):
+    # http://wiki.modworkshop.net/Payday_2/Weapon_IDs
+    jdata = json.loads(data)
+
+    with open(pd2_file) as out_file3:
+        pd2_data = json.load(out_file3)
+
+    stats = len(jdata['playerstats']['stats'])
+    # achievements = len(jdata['playerstats']['achievements'])
+    # weapons = len(pd2_data)
 
     highest_kills = 0
     highest_gun = ""
-
-    # print(stats)
 
     for index in range(stats):
         if str(jdata['playerstats']['stats'][index]['name']).startswith('weapon_kills_'):
@@ -81,8 +103,8 @@ def weapon_read(data):
 def armor_read(data):
     jdata = json.loads(data)
 
-    with open(pd2_file) as out_file2:
-        pd2_data = json.load(out_file2)
+    with open(pd2_file) as out_file4:
+        pd2_data = json.load(out_file4)
 
     stats = len(jdata['playerstats']['stats'])
 
@@ -110,8 +132,8 @@ def armor_read(data):
 def gadget_read(data):
     jdata = json.loads(data)
 
-    with open(pd2_file) as out_file2:
-        pd2_data = json.load(out_file2)
+    with open(pd2_file) as out_file5:
+        pd2_data = json.load(out_file5)
 
     stats = len(jdata['playerstats']['stats'])
 
