@@ -7,6 +7,7 @@ from helpers import descriptions as desc, tokens as t, steam_json
 
 import aiohttp
 from discord.ext import commands
+import discord
 
 from mcstatus import MinecraftServer
 
@@ -118,27 +119,26 @@ Description: {}
                         most_used_gadget, most_used_gadget_uses = steam_json.gadget_read(data)
                         most_used_armor, most_used_armor_uses = steam_json.armor_read(data)
 
-                        msg = """Payday 2 Stats for {}:
+                        embed = discord.Embed(title="PD2 Stats for " + user,
+                                              colour=discord.Colour.blue(),
+                                              url="http://pd2stats.com/profiles/" + user_id)
 
-Heists:            *{}W / {}L*
-Difficulty:       *{} Normal-VH,
-                         {} Overkill-Mayhem,
-                         {} DW+*
-
-Kills:                *FBI {},  Cop/SWAT {},
-                         Shield {},  Sniper {},  Cloaker {}
-                         Bulldozers {},  Gang/Mob {},
-                         Civilian {},  Other {}*
-
-Fav. Gun:        *{} - {} kills*
-Fav. Gadget:   *{} - {} uses*
-Fav. Armor:    *{} - {} uses*
-                        """.format(user, heist_s, heist_f, norm_vh_diff, ovk_may_diff, dw_od_diff,
-                                   fbi, cop_swat, kills_shield, kills_sniper, kills_cloaker, tank_kills, gang_mob_kills,
-                                   civ_kills, other_kills, most_used_gun, most_used_kills, most_used_gadget,
-                                   most_used_gadget_uses, most_used_armor, most_used_armor_uses)
-
-                        await self.bot.say(msg)
+                        embed.add_field(name="Heists", value="{} Completed, {} failed.".format(heist_s, heist_f))
+                        embed.add_field(name="Difficulty", value="{} Normal-Very Hard, {}Overkill-Mayhem, "
+                                                                 "{} Deathwish + One Down".format(norm_vh_diff,
+                                                                                                  ovk_may_diff,
+                                                                                                  dw_od_diff))
+                        embed.add_field(name="Kills", value="FBI {}, Cops/SWAT {}, Shield {}, Sniper {}, Cloaker {}, "
+                                                            "Bulldozer {}, Gang/Mob {}, Civilian {}, Other {}"
+                                                            "".format(fbi, cop_swat, kills_shield, kills_sniper,
+                                                                      kills_cloaker, tank_kills, gang_mob_kills,
+                                                                      civ_kills, other_kills))
+                        embed.add_field(name="Favourite Gun", value="{} - {} kills".format(most_used_gun,
+                                                                                           most_used_kills))
+                        embed.add_field(name="Favourite Gadget",
+                                        value="{} - {} uses".format(most_used_gadget, most_used_gadget_uses))
+                        embed.add_field(name="Favourite Armor",
+                                        value="{} - {} uses".format(most_used_armor, most_used_armor_uses))
 
             except KeyError as e:
                 log.warn("KeyError: {}".format(e))
