@@ -2,6 +2,8 @@ import asyncio
 import logging
 import bs4
 import requests
+from datetime import datetime
+
 
 from helpers import descriptions as desc, tokens as t, steam_json
 
@@ -124,7 +126,7 @@ Description: {}
                                               url="http://pd2stats.com/profiles/" + user_id)
 
                         embed.add_field(name="Heists", value="{} Completed, {} failed.".format(heist_s, heist_f))
-                        embed.add_field(name="Difficulty", value="{} Normal-Very Hard, {}Overkill-Mayhem, "
+                        embed.add_field(name="Difficulty", value="{} Normal-Very Hard, {} Overkill-Mayhem, "
                                                                  "{} Deathwish + One Down".format(norm_vh_diff,
                                                                                                   ovk_may_diff,
                                                                                                   dw_od_diff))
@@ -139,6 +141,8 @@ Description: {}
                                         value="{} - {} uses".format(most_used_gadget, most_used_gadget_uses))
                         embed.add_field(name="Favourite Armor",
                                         value="{} - {} uses".format(most_used_armor, most_used_armor_uses))
+
+                        embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
                         await self.bot.say(embed=embed)
 
