@@ -114,7 +114,7 @@
         "gadget_used_ammo_bag": "Ammo Bag",
         "gadget_used_doctor_bag": "Doctor Bag",
         "gadget_used_trip_mine": "Trip Mine",
-        "gadget_used_sentry_gun": "Senweapontry Gun",
+        "gadget_used_sentry_gun": "Sentry Gun",
         "gadget_used_ecm_jammer": "ECM Jammer",
         "gadget_used_first_aid": "First Aid Kit",
         "gadget_used_body_bag": "Body Bag Case",
@@ -138,22 +138,36 @@
         "normal", "hard", "overkill", "overkill_145", "overkill_290", "easy_wish", "sm_wish"
     ],
     "Masks":{
+        "mask_used_gagball": "The Gagball",
+        "mask_used_mummy": "The Mummy",
         "mask_used_": "",
-        "mask_used_": "",
-        "mask_used_": ""
+        "#link-for-masks+id": "http://wiki.modworkshop.net/Payday_2/Mask_IDs"
     },
     "Achievements":{
         "hot_wheels":{
             "name": "Coming in Hot",
-            "description": "On day 1 of the Watchdogs job, don't let the cops shoot and destroy the escape vehicle."
+            "description": "On day 1 of the Watchdogs job, don't let the cops shoot and destroy the escape vehicle.",
+            "image": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/218620/f6ed9cd6ec9750bcd36193c74e6f16104f6c1267.jpg",
+            "tags":[
+                "watchdogs", "escape", "vehicle", "coming", "in", "hot"
+            ]
+        },
+        "fish_ai":{
+            "name": "Fish A.I.",
+            "description": "On day 2 of the Watchdogs job, throw a loot bag into the sea, hoping fish move away as it gets near.",
+            "image": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/218620/19fd9f952f27bad6bc909721a69c6374cfa5e31b.jpg",
+            "tags":[
+                "watchdogs", "fish", "ai", "a.i.", "throw"
+            ]
         },
         "":{
             "name": "",
-            "description": ""
-        },
-        "":{
-            "name": "",
-            "description": ""
+            "description": "",
+            "image": ""
         }
-    }
+    },
+    "#Sources+Comments":[
+        "https://steamdb.info/app/218620/stats/", "Steam WebAPI",
+        "http://wiki.modworkshop.net/Payday_2/Weapon_IDs", "http://wiki.modworkshop.net/Payday_2/Mask_IDs"
+    ]
 }
