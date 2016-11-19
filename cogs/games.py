@@ -140,6 +140,8 @@ Description: {}
                         embed.add_field(name="Favourite Armor",
                                         value="{} - {} uses".format(most_used_armor, most_used_armor_uses))
 
+                        await self.bot.say(embed=embed)
+
             except KeyError as e:
                 log.warn("KeyError: {}".format(e))
                 await self.bot.say("Error: User '{}' was not found on list. Use `!addsteam` to add it -- "
