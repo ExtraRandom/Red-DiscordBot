@@ -145,7 +145,7 @@ class Games:
         else:
             await self.bot.say("This command is disabled currently. Ask the bot owner to add a Steam WebAPI key in "
                                "tokens.py for it to be enabled")
-
+    """
     @commands.command(pass_context=True)
     async def csgo2(self, ctx):
         user = str(ctx.message.author)
@@ -162,7 +162,7 @@ class Games:
                         data = await resp.text()  # resp.json()
 
                         print("hi")
-
+    """
     @commands.command()
     async def csgo(self):
         if not t.web_api == "":

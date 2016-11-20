@@ -81,7 +81,7 @@ def stat_loop(jdata, to_find, startswith):
                 break
             if i_index == i_loops - 1:
                 result.append(0)
-    print(result)
+    # print(result)
     return result
 
 
