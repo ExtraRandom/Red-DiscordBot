@@ -219,7 +219,7 @@ Average Search Time: {} seconds
                         travel = steam_json.read_startswith(data, "Travel_", "unturned")
 
                         embed = discord.Embed(title="Unturned Stats for " + user,
-                                              colour=discord.Colour.blue())
+                                              colour=discord.Colour.green())
 
                         embed.add_field(name="Kills", value="{} Players\n{} Zombies\n{} Mega Zombies"
                                                             "\n{} Animals".format(kills[0], kills[1], kills[2],
