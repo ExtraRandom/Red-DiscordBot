@@ -4,14 +4,13 @@ import bs4
 import requests
 from datetime import datetime
 
-
-from helpers import descriptions as desc, tokens as t, steam_json
+from helpers import tokens as t, steam_json
 
 import aiohttp
 from discord.ext import commands
 import discord
 
-from mcstatus import MinecraftServer
+# from mcstatus import MinecraftServer
 
 
 loop = asyncio.get_event_loop()
@@ -22,52 +21,23 @@ class Games:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="mc", description=desc.mc_ip, brief=desc.mc_ip)
-    async def minecraft_ip(self, ip: str):
-        try:
-            server = MinecraftServer.lookup(ip)
-            status = server.status()
-            data = status.raw
-            # print(data)
-            ver = data['version']['name']
-            version = float(ver[2:])
-            if version >= 9:
-                s_desc = data['description']['text']
-            else:
-                s_desc = data['description']
-            players = ""
-            try:
-                for player in data['players']['sample']:
-                    players += "{}, ".format(player['name'])
-                players = players[:-2]  # Remove final comma and the space after it
-            except Exception:
-                players = "None"
+    # TODO fix and re-add minecraft ip command (see code_dump.py)
 
-            msg = """ __*Status of {}*__
-
-Version: {}
-Online Players: {}
-Description: {}
-            """.format(ip, ver, players, s_desc)
-            await self.bot.say(msg)
-
-        except ValueError as e:
-            await self.bot.say("Invalid IP")
-            log.warn(e)
-
-        except Exception as e:
-            await self.bot.say("Server didn't return any info or an error occured.")
-            log.warning("Exception in games.py - {}".format(e))
-
-    @commands.command(pass_context=True, description="", brief="")
+    @commands.command(pass_context=True)
     async def pd2(self, ctx):
+        """Get Payday 2 Stats"""
         run = True
         user = str(ctx.message.author)
-        input = ctx.message.content
+        inp = ctx.message.content
 
-        if input.replace(" ", "") != "!pd2":
-            entered_name = input.split()[1:]
-            entered_name = ' '.join(entered_name)
+        print(inp)
+        print(user)
+
+        if inp.replace(" ", "") != "!pd2":
+            entered_name = inp.split()[1:]
+            entered_name = ' '.join(entered_name).replace("@", "")
+            print(entered_name)
+
             try:
                 user_id = steam_json.read(entered_name)
                 user = entered_name
@@ -75,7 +45,11 @@ Description: {}
                 await self.bot.say("Error: User with name '{}' not found on list.".format(entered_name))
                 return
         else:
-            user_id = steam_json.read(user)
+            try:
+                user_id = steam_json.read(user)
+            except KeyError as e:
+                await self.bot.say("Error: User {} has no Steam ID associated to them.".format(user))
+                return
 
         if not t.web_api == "" and run:
             try:
@@ -88,17 +62,13 @@ Description: {}
                         data = await resp.text()  # resp.json()
 
                         # TODO add possible error catching
-                        # TODO finish command
 
                         heist_s = steam_json.steam_read(data, "heist_success")
                         heist_f = steam_json.steam_read(data, "heist_failed")
 
-                        kills = steam_json.read_startswith(data, "enemy_kills_")
-                        diffs = steam_json.read_startswith(data, "difficulty_")
+                        kills = steam_json.read_startswith(data, "enemy_kills_", "pd2")
+                        diffs = steam_json.read_startswith(data, "difficulty_", "pd2")
 
-                        norm_vh_diff = diffs[0] + diffs[1] + diffs[2]
-                        ovk_may_diff = diffs[3] + diffs[5]
-                        dw_od_diff = diffs[4] + diffs[6]
 
                         fbi = kills[1] + kills[2] + kills[3]
                         cop_swat = kills[0] + kills[29] + kills[7] + kills[6] + kills[5]
@@ -125,22 +95,38 @@ Description: {}
                                               colour=discord.Colour.blue(),
                                               url="http://pd2stats.com/profiles/" + user_id)
 
-                        embed.add_field(name="Heists", value="{} Completed, {} failed.".format(heist_s, heist_f))
-                        embed.add_field(name="Difficulty", value="{} Normal-Very Hard, {} Overkill-Mayhem, "
-                                                                 "{} Deathwish + One Down".format(norm_vh_diff,
-                                                                                                  ovk_may_diff,
-                                                                                                  dw_od_diff))
-                        embed.add_field(name="Kills", value="FBI {}, Cops/SWAT {}, Shield {}, Sniper {}, Cloaker {}, "
-                                                            "Bulldozer {}, Gang/Mob {}, Civilian {}, Other {}"
+                        embed.add_field(name="Heists", value="{} Completed"
+                                                             "\n{} Failed"
+                                                             "".format(heist_s, heist_f))
+
+                        embed.add_field(name="Difficulty", value="{} Normal\n"
+                                                                 "{} Hard\n"
+                                                                 "{} Very Hard\n"
+                                                                 "{} Overkill\n"
+                                                                 "{} Mayhem\n"
+                                                                 "{} Deathwish\n"
+                                                                 "{} One Down"
+                                                                 "".format(diffs[0], diffs[1], diffs[2], diffs[3]
+                                                                           , diffs[5], diffs[4], diffs[6]))
+
+                        embed.add_field(name="Kills", value="{} FBI\n"
+                                                            "{} Cops/SWAT\n"
+                                                            "{} Shield\n"
+                                                            "{} Sniper\n"
+                                                            "{} Cloaker\n"
+                                                            "{} Bulldozer\n"
+                                                            "{} Gang/Mob\n"
+                                                            "{} Civilian\n"
+                                                            "{} Other"
                                                             "".format(fbi, cop_swat, kills_shield, kills_sniper,
                                                                       kills_cloaker, tank_kills, gang_mob_kills,
                                                                       civ_kills, other_kills))
-                        embed.add_field(name="Favourite Gun", value="{} - {} kills".format(most_used_gun,
-                                                                                           most_used_kills))
+                        embed.add_field(name="Favourite Gun",
+                                        value="{}\n{} kills".format(most_used_gun, most_used_kills))
                         embed.add_field(name="Favourite Gadget",
-                                        value="{} - {} uses".format(most_used_gadget, most_used_gadget_uses))
+                                        value="{}\n{} uses".format(most_used_gadget, most_used_gadget_uses))
                         embed.add_field(name="Favourite Armor",
-                                        value="{} - {} uses".format(most_used_armor, most_used_armor_uses))
+                                        value="{}\n{} uses".format(most_used_armor, most_used_armor_uses))
 
                         embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
@@ -160,7 +146,24 @@ Description: {}
             await self.bot.say("This command is disabled currently. Ask the bot owner to add a Steam WebAPI key in "
                                "tokens.py for it to be enabled")
 
-    @commands.command(description=desc.csgo, brief=desc.csgo)
+    @commands.command(pass_context=True)
+    async def csgo2(self, ctx):
+        user = str(ctx.message.author)
+        user_id = steam_json.read(user)
+
+        if not t.web_api == "":
+            # try:
+                link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=730&key={}" \
+                       "&steamid={}&format=json" \
+                       "".format(t.web_api, user_id)
+
+                with aiohttp.ClientSession() as session:
+                    async with session.get(link)as resp:
+                        data = await resp.text()  # resp.json()
+
+                        print("hi")
+
+    @commands.command()
     async def csgo(self):
         if not t.web_api == "":
             try:
@@ -194,48 +197,62 @@ Average Search Time: {} seconds
             await self.bot.say("This command is disabled currently. Ask the bot owner to add a Steam WebAPI key in "
                                "tokens.py for it to be enabled")
 
-    @commands.group(pass_context=True, description=desc.steam_status, brief=desc.steam_status)
-    async def steam(self, ctx):
-        if ctx.invoked_subcommand is None:
-            await self.bot.say(await get_status("short"))
+    @commands.command(pass_context=True)
+    async def unturned(self, ctx):
+        """Get Unturned Stats"""
 
-    @steam.command(name="status", description=desc.steam_status, brief=desc.steam_status)
-    async def _status(self):
-        await self.bot.say(await get_status("long"))
+        user = str(ctx.message.author)
+        user_id = steam_json.read(user)
 
-    @steam.command(name="bestsellers", description=desc.steam_bs, brief=desc.steam_bs)
-    async def _bs(self):
-        future = loop.run_in_executor(None, requests.get,
-                                      "http://store.steampowered.com/search/?filter=topsellers&os=win")
-        res = await future
+        if not t.web_api == "":
+            #try:
+                link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=304930&key={}" \
+                       "&steamid={}&format=json" \
+                       "".format(t.web_api, user_id)
 
-        try:
-            res.raise_for_status()
-        except Exception as e:
-            await self.bot.say("**Error with request.\nError: {}".format(str(e)))
-            log.exception("Error with request (games.py)")
-            return
+                with aiohttp.ClientSession() as session:
+                    async with session.get(link)as resp:
+                        data = await resp.text()
 
-        doc = bs4.BeautifulSoup(res.text, "html.parser")
-        title = doc.select('span[class="title"]')
+                        kills = steam_json.read_startswith(data, "Kills_", "unturned")
+                        founds = steam_json.read_startswith(data, "Found_", "unturned")
+                        travel = steam_json.read_startswith(data, "Travel_", "unturned")
 
-        msg = """**Best Selling Steam Games**
+                        embed = discord.Embed(title="Unturned Stats for " + user,
+                                              colour=discord.Colour.blue())
 
- 1) {}
-2) {}
-4) {}
-3) {}
-5) {}
-""".format(title[0].getText(), title[1].getText(), title[2].getText(), title[3].getText(), title[4].getText())
+                        embed.add_field(name="Kills", value="{} Players\n{} Zombies\n{} Mega Zombies"
+                                                            "\n{} Animals".format(kills[0], kills[1], kills[2],
+                                                                                  kills[3]))
+                        embed.add_field(name="General", value="{} Items Crafted\n"
+                                                              "{} Resources Harvested\n"
+                                                              "{} Experience Gained\n"
+                                                              "{} Items Crafted\n"
+                                                              "{} Fish Caught\n"
+                                                              "{} Plants Grown\n"
+                                                              "{} Objects Built\n"
+                                                              "{} Projectiles Thrown"
+                                                              "".format(founds[0], founds[1], founds[2], founds[3],
+                                                                        founds[4], founds[5], founds[6], founds[7]))
 
-        await self.bot.say(msg)
+                        embed.add_field(name="Traveled", value="{}m by Foot\n"
+                                                               "{}m by Vehicle".format(travel[0], travel[1]))
 
-    @steam.command(name="sales", description=desc.steam_sales, brief=desc.steam_sales)
-    async def _deals(self):
-        await self.bot.say("https://steamdb.info/sales/")
+                        await self.bot.say(embed=embed)
 
-    @commands.command(description=desc.ow, brief=desc.owb)
+            #except Exception as e:
+                #print("oh no")
+
+    @commands.command()
     async def overwatch(self, region: str, battletag: str):
+        """Get Overwatch Stats"""
+
+        await self.bot.say("Command disabled until further notice.")
+        return
+
+        # TODO update to use https://github.com/SunDwarf/OWAPI/blob/master/api.md
+        # https://owapi.net/api/v3/u/ExtraRandom-2501/blob?format=json_pretty
+
         msg = await self.bot.say("Fetching Stats for {}".format(battletag))
 
         user = battletag.replace("#", "-")
@@ -320,6 +337,7 @@ Average Search Time: {} seconds
         except ZeroDivisionError:
             win_percent = "N/A"
         """
+
         await self.bot.edit_message(msg, "**Overwatch Stats for {0} - {1}**\n\n"
                                          "Most Played Hero:   *{4}, {5} played*\n"
                                          "Time Played:              *{2}*\n"
@@ -329,37 +347,7 @@ Average Search Time: {} seconds
                                                    games_won, most_played, most_games, medals))
 
 
-async def get_status(fmt):
-    steam_api = 'http://is.steam.rip/api/v1/?request=SteamStatus'
-    with aiohttp.ClientSession() as session:
-        async with session.get(steam_api)as resp:
-            data = await resp.json()
-            if str(data["result"]["success"]) == "True":
-                login = (data["result"]["SteamStatus"]["services"]["SessionsLogon"]).capitalize()
-                community = (data["result"]["SteamStatus"]["services"]["SteamCommunity"]).capitalize()
-                economy = (data["result"]["SteamStatus"]["services"]["IEconItems"]).capitalize()
-                # leaderboards = (data["result"]["SteamStatus"]["services"]["LeaderBoards"]).capitalize()
-                if fmt == "long":
-                    reply = """**Steam Server Status**
-    ```xl
-    Login          {}
-    Community      {}
-    Economy        {}```""".format(login, community, economy)
-                elif fmt == "short":
-                    if str(login) != "Normal" and str(community) != "Normal" and str(economy) != "Normal":
-                        reply = "Steam might be having some issues, use `!steam status! for more info."
-                    # elif login is "normal" and community is "normal" and economy is "normal":
-                    #    reply = "Steam is running fine - no issues detected, use `!steam status! for more info."
-                    else:
-                        reply = "Steam appears to be running fine."
-                else:  # if wrong format
-                    log.error("Wrong format given for get_status().")
-                    reply = "This error has occurred because you entered an incorrect format for get_status()."
-
-            else:
-                reply = "Failed to connect to API - Error: {}".format(data["result"]["error"])
-
-    return reply
+# TODO rewrite steam using rich embed - include CS:GO and tf2 status
 
 
 def setup(bot):

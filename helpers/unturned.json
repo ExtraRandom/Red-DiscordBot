@@ -1,0 +1,22 @@
+{
+    "Kills":[
+        "Zombies_Normal", "Players", "Zombies_Mega", "Animals"
+    ]
+    ,
+    "Found":[
+        "Items", "Resources", "Experience", "Crafts", "Fishes", "Plants",
+        "Buildables", "Throwables"
+    ],
+    "Travel":[
+        "Foot", "Vehicle"
+    ],
+    "WeaponUsage":{
+        "Accuracy_Shot": "Shots",
+        "Accuracy_Hit": "Hits",
+        "Headshots": "Headshots"
+    },
+    "Arena":{
+        "Arena_Wins": "Arena Wins"
+    },
+    "#Sources": ["https://steamdb.info/app/304930/stats/"]
+}

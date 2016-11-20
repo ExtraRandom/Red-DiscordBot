@@ -1,7 +1,9 @@
 import json
 
-file = "helpers/steam_id.json"
+id_file = "helpers/steam_id.json"
 pd2_file = "helpers/pd2_info.json"
+unturned_file = "helpers/unturned.json"
+csgo_file = "helpers/csgo.json"
 
 """
 For reading and writing to steam_id.json
@@ -9,23 +11,11 @@ For reading and writing to steam_id.json
 
 
 def read(user):
-    with open(file) as data_file:
+    with open(id_file) as data_file:
         data = json.load(data_file)
         # TODO check user exists - if no stats exist then user doesnt own the game
         return data[user]
 
-"""
-def write(user):
-
-    return 0
-
-    # todo get this code working
-
-    data = read(user)
-
-    with open(file) as out_file:
-        data = json.dump(out_file)
-"""
 
 """
 For reading the .json containing stat info
@@ -44,30 +34,54 @@ def steam_read(data, stat_name):
     return 0
 
 
-def read_startswith(data, startswith):
+def read_startswith(data, startswith, game):
     jdata = json.loads(data)
 
-    with open(pd2_file) as out_file2:
-        pd2_data = json.load(out_file2)
-
-    stats = len(jdata['playerstats']['stats'])
+    game_data = 0
 
     result = []
 
-    for index in range(stats):
-        index_str = str(jdata['playerstats']['stats'][index]['name'])
-        if index_str.startswith(startswith):
+    if game == "pd2":
+        with open(pd2_file) as out_file2:
+            game_data = json.load(out_file2)
 
-            if startswith == "enemy_kills_":
-                for word in range(len(pd2_data['Kills'])):
-                    if index_str == ("enemy_kills_" + pd2_data['Kills'][word]):
-                        result.append(jdata['playerstats']['stats'][index]['value'])
+    elif game == "unturned":
+        with open(unturned_file) as out_file2:
+            game_data = json.load(out_file2)
 
-            if startswith == "difficulty_":
-                for word in range(len(pd2_data['Difficulty'])):
-                    if index_str.endswith(pd2_data['Difficulty'][word]):
-                        result.append(jdata['playerstats']['stats'][index]['value'])
+    if game == "pd2":
+        if startswith == "enemy_kills_":
+            to_find = game_data['Kills']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "difficulty_":
+            to_find = game_data['Difficulty']
+            result = stat_loop(jdata, to_find, startswith)
 
+    if game == "unturned":
+        if startswith == "Kills_":
+            to_find = game_data['Kills']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "Found_":
+            to_find = game_data['Found']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "Travel_":
+            to_find = game_data['Travel']
+            result = stat_loop(jdata, to_find, startswith)
+    return result
+
+
+def stat_loop(jdata, to_find, startswith):
+    result = []
+    loops = len(to_find)
+    i_loops = len(jdata['playerstats']['stats'])
+    for index in range(loops):
+        for i_index in range(i_loops):
+            if jdata['playerstats']['stats'][i_index]['name'] == "{}{}".format(startswith, to_find[index]):
+                result.append(jdata['playerstats']['stats'][i_index]['value'])
+                break
+            if i_index == i_loops - 1:
+                result.append(0)
+    print(result)
     return result
 
 
