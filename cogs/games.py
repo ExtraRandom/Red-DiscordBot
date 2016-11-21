@@ -168,6 +168,86 @@ class Games:
                                "tokens.py for it to be enabled")
 
     @commands.command(pass_context=True)
+    async def csgo(self, ctx):
+        user = str(ctx.message.author)
+        user_id = steam_json.read(user)
+
+        if not t.web_api == "":
+            try:
+                link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=730&key={}" \
+                       "&steamid={}&format=json" \
+                       "".format(t.web_api, user_id)
+
+                with aiohttp.ClientSession() as session:
+                    async with session.get(link)as resp:
+                        data = await resp.text()  # resp.json()
+
+                        kills = steam_json.read_startswith(data, "total_kills_", "csgo")
+                        general = steam_json.read_startswith(data, "", "csgo")
+                        mapwins = steam_json.read_startswith(data, "total_wins_map_", "csgo")
+                        # accuracy = steam_json.read_startswith(data, "")
+
+                        top_guns = get_top5(kills)
+                        top_maps = get_top5(mapwins)
+
+                        gdata = steam_json.csgo_info()
+
+                        embed = discord.Embed(title="CS:GO Stats for {}".format(user),
+                                              colour=discord.Colour.dark_green())
+
+                        embed.add_field(name="General", value="Total Kills: {}\n"
+                                                              "Total Deaths: {}\n"
+                                                              "Bombs Planted: {}\n"
+                                                              "Bombs Defused: {}\n"
+                                                              "Hostages Rescued: {}"
+                                                              "".format(general[0], general[1], general[2], general[3], general[4]))
+
+                        embed.add_field(name="Top Guns", value="1: {} - {} kills\n"
+                                                               "2: {} - {} kills\n"
+                                                               "3: {} - {} kills\n"
+                                                               "4: {} - {} kills\n"
+                                                               "5: {} - {} kills\n"
+                                                               "".format(str(gdata['Kills'][top_guns[0]]).upper(),
+                                                                         kills[top_guns[0]],
+                                                                         str(gdata['Kills'][top_guns[1]]).upper(),
+                                                                         kills[top_guns[1]],
+                                                                         str(gdata['Kills'][top_guns[2]]).upper(),
+                                                                         kills[top_guns[2]],
+                                                                         str(gdata['Kills'][top_guns[3]]).upper(),
+                                                                         kills[top_guns[3]],
+                                                                         str(gdata['Kills'][top_guns[4]]).upper(),
+                                                                         kills[top_guns[4]]
+                                                                         ))
+
+                        embed.add_field(name="Top Maps", value="1: {} - {} wins\n"
+                                                               "2: {} - {} wins\n"
+                                                               "3: {} - {} wins\n"
+                                                               "4: {} - {} wins\n"
+                                                               "5: {} - {} wins\n"
+                                                               "".format(str(gdata['Maps'][top_maps[0]]).upper(),
+                                                                         mapwins[top_maps[0]],
+                                                                         str(gdata['Maps'][top_maps[1]]).upper(),
+                                                                         mapwins[top_maps[1]],
+                                                                         str(gdata['Maps'][top_maps[2]]).upper(),
+                                                                         mapwins[top_maps[2]],
+                                                                         str(gdata['Maps'][top_maps[3]]).upper(),
+                                                                         mapwins[top_maps[3]],
+                                                                         str(gdata['Maps'][top_maps[4]]).upper(),
+                                                                         mapwins[top_maps[4]]))
+
+                        percent = (general[5] / general[6]) * 100
+                        embed.add_field(name="Accuracy", value="Shots Fired: {}\n"
+                                                               "Shots Hit: {}\n"
+                                                               "Accuracy Percent: {}%"
+                                                               "".format(general[5], general[6],
+                                                                         str(percent).split(".")[0]))
+
+                        await self.bot.say(embed=embed)
+
+            except KeyError as e:
+                self.bot.say("Error finding stat - {}".format(e))
+
+    @commands.command(pass_context=True)
     async def unturned(self, ctx):
         """Get Unturned Stats"""
 
