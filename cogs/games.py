@@ -30,13 +30,13 @@ class Games:
         user = str(ctx.message.author)
         inp = ctx.message.content
 
-        print(inp)
-        print(user)
+        # print(inp)
+        # print(user)
 
         if inp.replace(" ", "") != "!pd2":
             entered_name = inp.split()[1:]
             entered_name = ' '.join(entered_name).replace("@", "")
-            print(entered_name)
+            # print(entered_name)
 
             try:
                 user_id = steam_json.read(entered_name)
