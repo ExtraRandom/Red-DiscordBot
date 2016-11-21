@@ -29,9 +29,16 @@ def steam_read(data, stat_name):
     for index in range(stats):
         if jdata['playerstats']['stats'][index]['name'] == stat_name:
             return jdata['playerstats']['stats'][index]['value']
-    # TODO make log
     print("No result found for {}. Counting as zero.".format(stat_name))
     return 0
+
+
+def csgo_info():
+
+    with open(csgo_file) as out_file2:
+        game_data = json.load(out_file2)
+
+    return game_data  # game_data['Kills'], game_data['Maps']
 
 
 def read_startswith(data, startswith, game):
@@ -47,6 +54,10 @@ def read_startswith(data, startswith, game):
 
     elif game == "unturned":
         with open(unturned_file) as out_file2:
+            game_data = json.load(out_file2)
+
+    elif game == "csgo":
+        with open(csgo_file) as out_file2:
             game_data = json.load(out_file2)
 
     if game == "pd2":
@@ -67,6 +78,18 @@ def read_startswith(data, startswith, game):
         if startswith == "Travel_":
             to_find = game_data['Travel']
             result = stat_loop(jdata, to_find, startswith)
+
+    if game == "csgo":
+        if startswith == "total_kills_":
+            to_find = game_data['Kills']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "":
+            to_find = game_data['General Stats']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "total_wins_map_":
+            to_find = game_data['Maps']
+            result = stat_loop(jdata, to_find, startswith)
+
     return result
 
 
