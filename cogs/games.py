@@ -23,6 +23,27 @@ class Games:
 
     # TODO fix and re-add minecraft ip command (see code_dump.py)
 
+    @commands.command()
+    async def status(self):
+        """Get Status of Steam and CS:GO servers"""
+        # TODO add a fallback if something fails
+        login, community, economy = await status_steam()
+        scheduler, servers, players, searching, search_time = await status_csgo()
+
+        embed = discord.Embed(title="Status of Steam", description="Also includes CSGO Status",
+                              url="https://steamstat.us/", colour=discord.Colour.red())
+        embed.add_field(name="Steam", value="Login: {}\n"
+                                            "Community: {}\n"
+                                            "Economy: {}"
+                                            "".format(login, community, economy))
+        embed.add_field(name="CS:GO", value="Scheduler: {}\n"
+                                            "Online Servers: {}\n"
+                                            "Online Players: {} ({} searching)\n"
+                                            "Average Search Time: {} seconds"
+                                            "".format(scheduler.capitalize(), servers, players, searching, search_time))
+        embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
+        await self.bot.say(embed=embed)
+
     @commands.command(pass_context=True)
     async def pd2(self, ctx):
         """Get Payday 2 Stats"""
@@ -147,113 +168,6 @@ class Games:
                                "tokens.py for it to be enabled")
 
     @commands.command(pass_context=True)
-    async def csgo(self, ctx):
-        user = str(ctx.message.author)
-        user_id = steam_json.read(user)
-
-        if not t.web_api == "":
-            try:
-                link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=730&key={}" \
-                       "&steamid={}&format=json" \
-                       "".format(t.web_api, user_id)
-
-                with aiohttp.ClientSession() as session:
-                    async with session.get(link)as resp:
-                        data = await resp.text()  # resp.json()
-
-                        kills = steam_json.read_startswith(data, "total_kills_", "csgo")
-                        general = steam_json.read_startswith(data, "", "csgo")
-                        mapwins = steam_json.read_startswith(data, "total_wins_map_", "csgo")
-
-                        top_guns = get_top5(kills)
-                        top_maps = get_top5(mapwins)
-
-                        gdata = steam_json.csgo_info()
-
-                        embed = discord.Embed(title="CS:GO Stats for {}".format(user),
-                                              colour=discord.Colour.dark_green())
-
-                        embed.add_field(name="General", value="Total Kills: {}\n"
-                                                              "Total Deaths: {}\n"
-                                                              "Bombs Planted: {}\n"
-                                                              "Bombs Defused: {}"
-                                                              "".format(general[0], general[1], general[2], general[3]))
-
-                        embed.add_field(name="Top Guns", value="1: {} - {} kills\n"
-                                                               "2: {} - {} kills\n"
-                                                               "3: {} - {} kills\n"
-                                                               "4: {} - {} kills\n"
-                                                               "5: {} - {} kills\n"
-                                                               "".format(str(gdata['Kills'][top_guns[0]]).upper(),
-                                                                         kills[top_guns[0]],
-                                                                         str(gdata['Kills'][top_guns[1]]).upper(),
-                                                                         kills[top_guns[1]],
-                                                                         str(gdata['Kills'][top_guns[2]]).upper(),
-                                                                         kills[top_guns[2]],
-                                                                         str(gdata['Kills'][top_guns[3]]).upper(),
-                                                                         kills[top_guns[3]],
-                                                                         str(gdata['Kills'][top_guns[4]]).upper(),
-                                                                         kills[top_guns[4]]
-                                                                         ))
-
-                        embed.add_field(name="Top Maps", value="1: {} - {} wins\n"
-                                                               "2: {} - {} wins\n"
-                                                               "3: {} - {} wins\n"
-                                                               "4: {} - {} wins\n"
-                                                               "5: {} - {} wins\n"
-                                                               "".format(str(gdata['Maps'][top_maps[0]]).upper(),
-                                                                         mapwins[top_maps[0]],
-                                                                         str(gdata['Maps'][top_maps[1]]).upper(),
-                                                                         mapwins[top_maps[1]],
-                                                                         str(gdata['Maps'][top_maps[2]]).upper(),
-                                                                         mapwins[top_maps[2]],
-                                                                         str(gdata['Maps'][top_maps[3]]).upper(),
-                                                                         mapwins[top_maps[3]],
-                                                                         str(gdata['Maps'][top_maps[4]]).upper(),
-                                                                         mapwins[top_maps[4]]))
-
-                        await self.bot.say(embed=embed)
-
-            except KeyError as e:
-                self.bot.say("Error finding stat - {}".format(e))
-
-    """
-    @commands.command()
-    async def csgo(self):
-        if not t.web_api == "":
-            try:
-                link = "https://api.steampowered.com/ICSGOServers_730/GetGameServersStatus/v1/?key={}&format=json" \
-                       "".format(t.web_api)
-
-                with aiohttp.ClientSession() as session:
-                    async with session.get(link)as resp:
-                        data = await resp.json()
-
-                        scheduler = data['result']['matchmaking']['scheduler']
-                        servers = data['result']['matchmaking']['online_servers']
-                        players = data['result']['matchmaking']['online_players']
-                        searching = data['result']['matchmaking']['searching_players']
-                        search_time = data['result']['matchmaking']['search_seconds_avg']
-
-                        msg = """"""CSGO Status
-
-Scheduler Status: {}
-Online Servers: {}
-Online Players: {} ({} searching)
-Average Search Time: {} seconds
-                        """""".format(scheduler.capitalize(), servers, players, searching, search_time)
-
-                        await self.bot.say(msg)
-
-            except Exception as e:
-                await self.bot.say("Error getting data - Ask Owner to check WebAPI key is correct")
-                log.warn("Invalid WebAPI key")
-        else:
-            await self.bot.say("This command is disabled currently. Ask the bot owner to add a Steam WebAPI key in "
-                               "tokens.py for it to be enabled")
-    """
-
-    @commands.command(pass_context=True)
     async def unturned(self, ctx):
         """Get Unturned Stats"""
 
@@ -293,6 +207,7 @@ Average Search Time: {} seconds
 
                         embed.add_field(name="Traveled", value="{}m by Foot\n"
                                                                "{}m by Vehicle".format(travel[0], travel[1]))
+                        embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
                         await self.bot.say(embed=embed)
 
@@ -407,20 +322,54 @@ Average Search Time: {} seconds
 
 def get_top5(data):
     """Get top 5 stats from given data"""
-    #print(data)
-
-    result = []
     gdata = data
-    top = []
-    indexs = []
-
-    top.append(max(gdata))
-
     result = sorted(range(len(gdata)), key=lambda i: gdata[i], reverse=True)
 
-    #print(result)
     return result
 
+async def status_steam():
+    url = 'http://is.steam.rip/api/v1/?request=SteamStatus'
+    with aiohttp.ClientSession() as session:
+        async with session.get(url)as resp:
+            data = await resp.json()
+            if str(data["result"]["success"]) == "True":
+                login = (data["result"]["SteamStatus"]["services"]["SessionsLogon"]).capitalize()
+                community = (data["result"]["SteamStatus"]["services"]["SteamCommunity"]).capitalize()
+                economy = (data["result"]["SteamStatus"]["services"]["IEconItems"]).capitalize()
+            else:
+                login = "N/A"
+                community = "N/A"
+                economy = "N/A"
+
+    return login, community, economy
+
+
+async def status_csgo():
+
+    scheduler = "N/A"
+    servers = "N/A"
+    players = "N/A"
+    searching = "N/A"
+    search_time = "N/A"
+
+    if not t.web_api == "":
+        try:
+            link = "https://api.steampowered.com/ICSGOServers_730/GetGameServersStatus/v1/?key={}&format=json" \
+                   "".format(t.web_api)
+
+            with aiohttp.ClientSession() as session:
+                async with session.get(link)as resp:
+                    data = await resp.json()
+
+                    scheduler = data['result']['matchmaking']['scheduler']
+                    servers = data['result']['matchmaking']['online_servers']
+                    players = data['result']['matchmaking']['online_players']
+                    searching = data['result']['matchmaking']['searching_players']
+                    search_time = data['result']['matchmaking']['search_seconds_avg']
+        except Exception as e:
+            print("Error: {}".format(e))
+
+    return scheduler, servers, players, searching, search_time
 
 def setup(bot):
     bot.add_cog(Games(bot))
