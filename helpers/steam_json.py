@@ -14,7 +14,11 @@ def read(user):
     with open(id_file) as data_file:
         data = json.load(data_file)
         # TODO check user exists - if no stats exist then user doesnt own the game
-        return data[user]
+        try:
+            return data[user]
+        except KeyError as e:
+            print("KeyError: {}")
+            return 0
 
 
 """
@@ -68,7 +72,7 @@ def read_startswith(data, startswith, game):
             to_find = game_data['Difficulty']
             result = stat_loop(jdata, to_find, startswith)
 
-    if game == "unturned":
+    elif game == "unturned":
         if startswith == "Kills_":
             to_find = game_data['Kills']
             result = stat_loop(jdata, to_find, startswith)
@@ -78,8 +82,11 @@ def read_startswith(data, startswith, game):
         if startswith == "Travel_":
             to_find = game_data['Travel']
             result = stat_loop(jdata, to_find, startswith)
+        if startswith == "":
+            to_find = game_data['WeaponUsage']
+            result = stat_loop(jdata, to_find, startswith)
 
-    if game == "csgo":
+    elif game == "csgo":
         if startswith == "total_kills_":
             to_find = game_data['Kills']
             result = stat_loop(jdata, to_find, startswith)
@@ -145,8 +152,6 @@ def armor_read(data):
 
     stats = len(jdata['playerstats']['stats'])
 
-    # TODO better variable names
-
     highest = 0
     highest_armor = ""
 
@@ -173,8 +178,6 @@ def gadget_read(data):
         pd2_data = json.load(out_file5)
 
     stats = len(jdata['playerstats']['stats'])
-
-    # TODO better variable names
 
     highest = 0
     highest_gadget = ""

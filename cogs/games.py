@@ -155,9 +155,7 @@ class Games:
 
             except KeyError as e:
                 log.warn("KeyError: {}".format(e))
-                await self.bot.say("Error: User '{}' was not found on list. Use `!addsteam` to add it -- "
-                                   "THIS CURRENTLY ISN'T IMPLEMENTED .")
-                # TODO write the addsteam command
+                await self.bot.say("Error: User {} has no Steam ID associated to them.")
 
             # except Exception as e:
             #    print(e)
@@ -171,6 +169,9 @@ class Games:
     async def csgo(self, ctx):
         user = str(ctx.message.author)
         user_id = steam_json.read(user)
+        if user_id == 0:
+            await self.bot.say("Error: User {} has no Steam ID associated to them.".format(user))
+            return
 
         if not t.web_api == "":
             try:
@@ -186,6 +187,8 @@ class Games:
                         general = steam_json.read_startswith(data, "", "csgo")
                         mapwins = steam_json.read_startswith(data, "total_wins_map_", "csgo")
                         # accuracy = steam_json.read_startswith(data, "")
+                        kd_ratio = general[0] / general[1]
+                        kd_ratio = str(kd_ratio)[:4]
 
                         top_guns = get_top5(kills)
                         top_maps = get_top5(mapwins)
@@ -197,10 +200,12 @@ class Games:
 
                         embed.add_field(name="General", value="Total Kills: {}\n"
                                                               "Total Deaths: {}\n"
+                                                              "K/D Ratio: {}\n"
                                                               "Bombs Planted: {}\n"
                                                               "Bombs Defused: {}\n"
                                                               "Hostages Rescued: {}"
-                                                              "".format(general[0], general[1], general[2], general[3], general[4]))
+                                                              "".format(general[0], general[1], kd_ratio,
+                                                                        general[2], general[3], general[4]))
 
                         embed.add_field(name="Top Guns", value="1: {} - {} kills\n"
                                                                "2: {} - {} kills\n"
@@ -224,16 +229,16 @@ class Games:
                                                                "3: {} - {} wins\n"
                                                                "4: {} - {} wins\n"
                                                                "5: {} - {} wins\n"
-                                                               "".format(str(gdata['Maps'][top_maps[0]]).upper(),
-                                                                         mapwins[top_maps[0]],
-                                                                         str(gdata['Maps'][top_maps[1]]).upper(),
-                                                                         mapwins[top_maps[1]],
-                                                                         str(gdata['Maps'][top_maps[2]]).upper(),
-                                                                         mapwins[top_maps[2]],
-                                                                         str(gdata['Maps'][top_maps[3]]).upper(),
-                                                                         mapwins[top_maps[3]],
-                                                                         str(gdata['Maps'][top_maps[4]]).upper(),
-                                                                         mapwins[top_maps[4]]))
+                                                               "".format(str(gdata['Maps'][top_maps[0]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[0]],
+                                                                         str(gdata['Maps'][top_maps[1]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[1]],
+                                                                         str(gdata['Maps'][top_maps[2]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[2]],
+                                                                         str(gdata['Maps'][top_maps[3]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[3]],
+                                                                         str(gdata['Maps'][top_maps[4]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[4]]))
 
                         percent = (general[5] / general[6]) * 100
                         embed.add_field(name="Accuracy", value="Shots Fired: {}\n"
@@ -241,6 +246,8 @@ class Games:
                                                                "Accuracy Percent: {}%"
                                                                "".format(general[5], general[6],
                                                                          str(percent).split(".")[0]))
+
+                        embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
                         await self.bot.say(embed=embed)
 
@@ -253,6 +260,9 @@ class Games:
 
         user = str(ctx.message.author)
         user_id = steam_json.read(user)
+        if user_id == 0:
+            await self.bot.say("Error: User {} has no Steam ID associated to them.".format(user))
+            return
 
         if not t.web_api == "":
             #try:
@@ -267,26 +277,38 @@ class Games:
                         kills = steam_json.read_startswith(data, "Kills_", "unturned")
                         founds = steam_json.read_startswith(data, "Found_", "unturned")
                         travel = steam_json.read_startswith(data, "Travel_", "unturned")
+                        acc = steam_json.read_startswith(data, "", "unturned")
+                        a_wins = steam_json.steam_read(data, "Arena_Wins")
 
                         embed = discord.Embed(title="Unturned Stats for " + user,
                                               colour=discord.Colour.green())
 
-                        embed.add_field(name="Kills", value="{} Players\n{} Zombies\n{} Mega Zombies"
-                                                            "\n{} Animals".format(kills[0], kills[1], kills[2],
+                        embed.add_field(name="Kills", value="Players: {}\n"
+                                                            "Zombies: {}\n"
+                                                            "Mega Zombies: {}\n"
+                                                            "Animals: {}".format(kills[0], kills[1], kills[2],
                                                                                   kills[3]))
-                        embed.add_field(name="General", value="{} Items Crafted\n"
-                                                              "{} Resources Harvested\n"
-                                                              "{} Experience Gained\n"
-                                                              "{} Items Crafted\n"
-                                                              "{} Fish Caught\n"
-                                                              "{} Plants Grown\n"
-                                                              "{} Objects Built\n"
-                                                              "{} Projectiles Thrown"
+                        embed.add_field(name="General", value="Items Crafted: {}\n"
+                                                              "Resources Harvested: {}\n"
+                                                              "Experience Gained: {}\n"
+                                                              "Items Crafted: {}\n"
+                                                              "Fish Caught: {}\n"
+                                                              "Plants Grown: {}\n"
+                                                              "Objects Built: {}\n"
+                                                              "Projectiles Thrown: {}"
                                                               "".format(founds[0], founds[1], founds[2], founds[3],
                                                                         founds[4], founds[5], founds[6], founds[7]))
 
-                        embed.add_field(name="Traveled", value="{}m by Foot\n"
-                                                               "{}m by Vehicle".format(travel[0], travel[1]))
+                        embed.add_field(name="Traveled", value="By Foot: {}m\n"
+                                                               "By Vehicle: {}m".format(travel[0], travel[1]))
+
+                        embed.add_field(name="Weapon Usage", value="Shots: {}\n"
+                                                                   "Hits: {}\n"
+                                                                   "Headshots: {}"
+                                                                   "".format(acc[0], acc[1], acc[2]))
+
+                        embed.add_field(name="Arena", value="Wins: {}".format(a_wins))
+
                         embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
                         await self.bot.say(embed=embed)
@@ -296,10 +318,7 @@ class Games:
 
     @commands.command()
     async def overwatch(self, region: str, battletag: str):
-        """Get Overwatch Stats"""
-
-        await self.bot.say("Command disabled until further notice.")
-        return
+        """Get Overwatch Stats - Regions are 'eu', 'us' and 'kr'"""
 
         # TODO update to use https://github.com/SunDwarf/OWAPI/blob/master/api.md
         # https://owapi.net/api/v3/u/ExtraRandom-2501/blob?format=json_pretty
@@ -308,7 +327,7 @@ class Games:
 
         user = battletag.replace("#", "-")
 
-        reg_eu = ["eu", "euro", "europe"]
+        reg_eu = ["eu", "euro", "europe", "italy", "it", "fr", "france", "sp", "spain", "en", "england", "uk", "gb"]
         reg_us = ["australia", "aussie", "aus", "us", "usa", "na", "america", "au"]
         reg_kr = ["asia", "korea", "kr", "as", "china", "japan"]
 
@@ -322,86 +341,69 @@ class Games:
             self.bot.edit_message(msg, "Unknown region: {}".format(region))
             return
 
-        future = loop.run_in_executor(
-            None, requests.get, "https://playoverwatch.com/en-us/career/pc/{}/{}".format(reg, user))
-        res = await future
-
         try:
-            res.raise_for_status()
-        except Exception as e:
-            await self.bot.edit_message(msg, "**Error with request. Please check for mistakes before trying again.**"
-                                             ".\nError: {}".format(str(e)))
-            log.exception("Error with request")
-            return
+            headers = {
+                'User-Agent': 'Ravioli'
+            }
+            link = "https://owapi.net/api/v3/u/{}/stats?format=json_pretty".format(user)
 
-        doc = bs4.BeautifulSoup(res.text, "html.parser")
-        # page = doc.select('div')
+            with aiohttp.ClientSession(headers=headers) as session:
+                async with session.get(link)as resp:
+                    data = await resp.json()
 
-        """
-        Games Played seems to have been removed from the page info is pulled from for some reason,
-        the code for getting it is commented out in case it makes a return
-        """
+                    stats = data['eu']['stats']['quickplay']
 
-        most_played = doc.select('div[data-overwatch-progress-percent="1"] div[class="title"]')[0].getText()
-        most_games = doc.select('div[data-overwatch-progress-percent="1"] div[class="description"]')[0].getText()
+                    time_played = stats['game_stats']['time_played']
+                    level = stats['overall_stats']['level']
+                    wins = stats['overall_stats']['wins']
+                    avatar = stats['overall_stats']['avatar']
 
-        stats = doc.select('div[class="card-stat-block"] tbody td')
+                    death_avg = stats['average_stats']['deaths_avg']
+                    elims_avg = stats['average_stats']['eliminations_avg']
+                    heals_avg = stats['average_stats']['healing_done_avg']
+                    objks_avg = stats['average_stats']['objective_kills_avg']
 
-        count = 0
+                    md_total = stats['game_stats']['medals']
+                    md_gold = stats['game_stats']['medals_gold']
+                    md_silver = stats['game_stats']['medals_silver']
+                    md_bronze = stats['game_stats']['medals_bronze']
 
-        games_won = 0
-        # games_played = 0
-        time_played = 0
-        medals = 0
+                    embed = discord.Embed(title="Overwatch Stats for {}".format(battletag),
+                                          colour=discord.Colour.orange())
+                    embed.set_thumbnail(url=avatar)
 
-        for item in stats:
-            if str(item) == "<td>Games Won</td>" and games_won == 0:
-                games_won = doc.select('div[id="quick-play"] div[class="card-stat-block"] tbody td'
-                                       '')[count].nextSibling.getText()
+                    embed.add_field(name="General", value="Time Played: {}\n"
+                                                          "Level: {}\n"
+                                                          "Wins: {}"
+                                                          "".format(time_played, level, wins))
 
-            if str(item) == "<td>Medals</td>" and medals == 0:
-                medals = doc.select('div[id="quick-play"] div[class="card-stat-block"] tbody td'
-                                    '')[count].nextSibling.getText()
+                    embed.add_field(name="Average", value="Eliminations: {}\n"
+                                                          "Deaths: {}\n"
+                                                          "Healing Done: {}\n"
+                                                          "Objective Kills: {}"
+                                                          "".format(elims_avg, death_avg, heals_avg, objks_avg))
 
-            """
-            if str(item) == "<td>Games Played</td>" and games_played == 0:
-                # print(item)
-                # games_played = doc.select('div[class="card-stat-block"] tbody td')[count].nextSibling.getText()
-                print(doc.select('div[id="quick-play"] div[class="card-stat-block"] tbody td')[count])
-                print(doc.select('div[id="quick-play"] div[class="card-stat-block"] tbody td')[count].nextSibling)
-            """
+                    embed.add_field(name="Medals", value="Total: {}\n"
+                                                         "Gold: {}\n"
+                                                         "Silver: {}\n"
+                                                         "Bronze: {}\n"
+                                                         "".format(md_total, md_gold, md_silver, md_bronze))
 
-            if str(item) == "<td>Time Played</td>" and time_played == 0:
-                time_played = doc.select('div[id="quick-play"] div[class="card-stat-block"] tbody td'
-                                         '')[count].nextSibling.getText()
-            if not time_played == 0 and games_won is not 0 and medals is not 0:
-                # prevent looping unnecessarily
-                break
-            count += 1
+                    embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
-        """
-        games_lost = int(games_played) - int(games_won)
-        won_lost = "{}/{}".format(games_won, games_lost)
+        except KeyError as e:
+            print("KeyError in Overwatch command: {}".format(e))
 
-        try:
-            win_percent = round(((float(games_won) / float(games_played)) * 100), 1)
-        except ZeroDivisionError:
-            win_percent = "N/A"
-        """
+        await self.bot.delete_message(msg)
+        if 'embed' in locals():
+            await self.bot.say(embed=embed)
+        else:
+            await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
+                               "status if issue persists.")
 
-        await self.bot.edit_message(msg, "**Overwatch Stats for {0} - {1}**\n\n"
-                                         "Most Played Hero:   *{4}, {5} played*\n"
-                                         "Time Played:              *{2}*\n"
-                                         "Games Won:             *{3}*\n"
-                                         "Medals:                      *{6}*"
-                                         "".format(battletag, reg.upper(), time_played,
-                                                   games_won, most_played, most_games, medals))
-
-
-# TODO rewrite steam using rich embed - include CS:GO and tf2 status
 
 def get_top5(data):
-    """Get top 5 stats from given data"""
+    """Get top 5 stats from given data - should probably rename this somewhen"""
     gdata = data
     result = sorted(range(len(gdata)), key=lambda i: gdata[i], reverse=True)
 
@@ -450,6 +452,7 @@ async def status_csgo():
             print("Error: {}".format(e))
 
     return scheduler, servers, players, searching, search_time
+
 
 def setup(bot):
     bot.add_cog(Games(bot))

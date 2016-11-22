@@ -137,12 +137,6 @@
     "Difficulty": [
         "normal", "hard", "overkill", "overkill_145", "overkill_290", "easy_wish", "sm_wish"
     ],
-    "Masks":{
-        "mask_used_gagball": "The Gagball",
-        "mask_used_mummy": "The Mummy",
-        "mask_used_": "",
-        "#link-for-masks+id": "http://wiki.modworkshop.net/Payday_2/Mask_IDs"
-    },
     "Achievements":{
         "hot_wheels":{
             "name": "Coming in Hot",
