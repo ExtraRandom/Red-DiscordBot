@@ -90,7 +90,6 @@ class Games:
                         kills = steam_json.read_startswith(data, "enemy_kills_", "pd2")
                         diffs = steam_json.read_startswith(data, "difficulty_", "pd2")
 
-
                         fbi = kills[1] + kills[2] + kills[3]
                         cop_swat = kills[0] + kills[29] + kills[7] + kills[6] + kills[5]
                         tank_kills = kills[13] + kills[23] + kills[24] + kills[22] + kills[19]
@@ -155,12 +154,8 @@ class Games:
 
             except KeyError as e:
                 log.warn("KeyError: {}".format(e))
-                await self.bot.say("Error: User {} has no Steam ID associated to them.")
-
-            # except Exception as e:
-            #    print(e)
-            #     await self.bot.say("Error getting data - Ask Owner to check WebAPI key is correct")
-            #    log.warn("Invalid WebAPI key")
+                await self.bot.say("Error: User {} has no Steam ID associated to them or an error occurred fetching "
+                                   "stats.")
         else:
             await self.bot.say("This command is disabled currently. Ask the bot owner to add a Steam WebAPI key in "
                                "tokens.py for it to be enabled")
@@ -241,8 +236,8 @@ class Games:
                                                                          .capitalize(), mapwins[top_maps[4]]))
 
                         percent = (general[5] / general[6]) * 100
-                        embed.add_field(name="Accuracy", value="Shots Fired: {}\n"
-                                                               "Shots Hit: {}\n"
+                        embed.add_field(name="Accuracy", value="Shots Hit: {}\n"
+                                                               "Shots Fired: {}\n"
                                                                "Accuracy Percent: {}%"
                                                                "".format(general[5], general[6],
                                                                          str(percent).split(".")[0]))
@@ -363,10 +358,10 @@ class Games:
                     heals_avg = stats['average_stats']['healing_done_avg']
                     objks_avg = stats['average_stats']['objective_kills_avg']
 
-                    md_total = stats['game_stats']['medals']
-                    md_gold = stats['game_stats']['medals_gold']
-                    md_silver = stats['game_stats']['medals_silver']
-                    md_bronze = stats['game_stats']['medals_bronze']
+                    md_total = int(stats['game_stats']['medals'])
+                    md_gold = int(stats['game_stats']['medals_gold'])
+                    md_silver = int(stats['game_stats']['medals_silver'])
+                    md_bronze = int(stats['game_stats']['medals_bronze'])
 
                     embed = discord.Embed(title="Overwatch Stats for {}".format(battletag),
                                           colour=discord.Colour.orange())
@@ -411,18 +406,23 @@ def get_top5(data):
 
 async def status_steam():
     url = 'http://is.steam.rip/api/v1/?request=SteamStatus'
-    with aiohttp.ClientSession() as session:
-        async with session.get(url)as resp:
-            data = await resp.json()
-            if str(data["result"]["success"]) == "True":
-                login = (data["result"]["SteamStatus"]["services"]["SessionsLogon"]).capitalize()
-                community = (data["result"]["SteamStatus"]["services"]["SteamCommunity"]).capitalize()
-                economy = (data["result"]["SteamStatus"]["services"]["IEconItems"]).capitalize()
-            else:
-                login = "N/A"
-                community = "N/A"
-                economy = "N/A"
-
+    try:
+        with aiohttp.ClientSession() as session:
+            async with session.get(url)as resp:
+                data = await resp.json()
+                if str(data["result"]["success"]) == "True":
+                    login = (data["result"]["SteamStatus"]["services"]["SessionsLogon"]).capitalize()
+                    community = (data["result"]["SteamStatus"]["services"]["SteamCommunity"]).capitalize()
+                    economy = (data["result"]["SteamStatus"]["services"]["IEconItems"]).capitalize()
+                else:
+                    login = "N/A"
+                    community = "N/A"
+                    economy = "N/A"
+    except Exception as e:
+        login = "Error"
+        community = "Error"
+        economy = "Error"
+        log.info("Error getting steam status: {}".format(e))
     return login, community, economy
 
 

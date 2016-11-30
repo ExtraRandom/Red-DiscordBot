@@ -134,9 +134,11 @@ def weapon_read(data):
             if int(jdata['playerstats']['stats'][index]['value']) > highest_kills:
                 highest_kills = int(jdata['playerstats']['stats'][index]['value'])
                 highest_gun = str(jdata['playerstats']['stats'][index]['name'])
-
-    if pd2_data['Weapons'][highest_gun]:
-        highest_gun = pd2_data['Weapons'][highest_gun]
+    try:
+        if pd2_data['Weapons'][highest_gun]:
+            highest_gun = pd2_data['Weapons'][highest_gun]
+    except KeyError as e:
+        highest_gun = ""
 
     if highest_gun == "" or highest_kills == 0:
         return "N/A", "N/A"

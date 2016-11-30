@@ -108,7 +108,8 @@
         "weapon_kills_usp": "Interceptor 45 Pistol",
         "weapon_kills_g26": "Chimano Compact Pistol",
         "weapon_kills_p226": "Signature .40 Pistol",
-        "weapon_kills_deagle": "Deagle Pistol"
+        "weapon_kills_deagle": "Deagle Pistol",
+        "weapin_kills_arbiter": "Arbiter Grenade Launcher"
     },
     "Gadget":{
         "gadget_used_ammo_bag": "Ammo Bag",
