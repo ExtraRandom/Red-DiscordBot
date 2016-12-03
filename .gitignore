@@ -8,3 +8,4 @@ helpers/tokens.py
 run.bat
 data/*
 data/red/*
+helpers/steam_id2.json

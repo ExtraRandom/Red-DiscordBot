@@ -1,7 +1,5 @@
 import asyncio
 import logging
-import bs4
-import requests
 from datetime import datetime
 
 from helpers import tokens as t, steam_json
@@ -9,6 +7,9 @@ from helpers import tokens as t, steam_json
 import aiohttp
 from discord.ext import commands
 import discord
+from cogs.utils import checks
+
+import json
 
 # from mcstatus import MinecraftServer
 
@@ -395,6 +396,48 @@ class Games:
         else:
             await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
                                "status if issue persists.")
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def addsteam(self, user: str, steamid: str):
+        """Owner only command -- WIP"""
+        print(user, " - ", steamid)
+        exists = await steam_json.check_profile(steamid)
+        exists = False # disables command as i need to finish it
+        if exists:
+            write_json = steam_json.write(user, steamid)
+            print(write_json)
+            pass
+
+    @commands.command()
+    async def pewds(self):
+        """Temporary - Find out if PewDiePie has hit 50m subs yet"""
+        if not t.yt_api == "":
+            try:
+                link = "https://www.googleapis.com/youtube/v3/channels?part=statistics&id=UC-lHJZR3Gqxm24_Vd_AJ5Yw&k" \
+                       "ey={}".format(t.yt_api)
+
+                with aiohttp.ClientSession() as session:
+                    async with session.get(link)as resp:
+                        data = await resp.text()
+                        #print(data)#.replace("'",'\\"'))
+                        tdata = json.loads(data)
+                        #print(tdata)
+                        subs = int(tdata['items'][0]['statistics']['subscriberCount'])
+                        to_go = 50000000 - subs
+                        to_go_count = "{:,}".format(to_go)
+                        sub_count = "{:,}".format(subs)
+                        await self.bot.say("PewDiePie Currently has {} subs, {} until 50m.".format(sub_count,
+                                                                                                   to_go_count))
+
+            except KeyError as e:
+                await self.bot.say("Error Getting Subs - KeyError {} - Channel may have already been deleted. "
+                                   "Try this link: <https://www.youtube.com/user/PewDiePie>".format(e))
+            except Exception as e:
+                await self.bot.say("An Error occurred. Error: {} - Channel may have already been deleted. "
+                                   "Try this link: <https://www.youtube.com/user/PewDiePie>".format(e))
+        else:
+            await self.bot.say("No YT API Key. Add one in helpers/tokens.py")
 
 
 def get_top5(data):

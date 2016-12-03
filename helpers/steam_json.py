@@ -1,4 +1,8 @@
 import json
+import bs4
+import requests
+import aiohttp
+import asyncio
 
 id_file = "helpers/steam_id.json"
 pd2_file = "helpers/pd2_info.json"
@@ -19,6 +23,41 @@ def read(user):
         except KeyError as e:
             print("KeyError: {}")
             return 0
+
+"""CURRENTLY THIS MESSES UP THE FILE WITH /'s N SHIT"""
+def write(user_discord, user_steamid):
+    with open(id_file) as data_file:
+        data = json.load(data_file)
+        try:
+            data[user_discord] = user_steamid
+            print(data)
+            with open(id_file, "w") as data_file2:
+                jdata = json.dumps(data)
+                json.dump(jdata, data_file2)
+            return True
+        except KeyError as e:
+            print("ker err: {}".format(e))
+            return False
+
+
+async def check_profile(user_id):
+    """Returns True if profile exists, false if not"""
+
+    with aiohttp.ClientSession() as session:
+        url = "http://steamcommunity.com/profiles/{}".format(user_id)
+        async with session.get(url) as resp:
+            try:
+                data = await resp.text()
+                doc = bs4.BeautifulSoup(data, "html.parser")
+                error = doc.select('head title')[0].getText()
+                if error == "Steam Community :: Error":
+                    print("false exist")
+                    return False
+                else:
+                    print("true exist")
+                    return True
+            except Exception as e:
+                print("something went wrong: {}".format(e))
 
 
 """
