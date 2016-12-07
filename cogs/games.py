@@ -427,7 +427,7 @@ class Games:
                         to_go = 50000000 - subs
                         to_go_count = "{:,}".format(to_go)
                         sub_count = "{:,}".format(subs)
-                        await self.bot.say("PewDiePie Currently has {} subs, {} until 50m.".format(sub_count,
+                        await self.bot.say("PewDiePie currently has {} subs, {} until 50m.".format(sub_count,
                                                                                                    to_go_count))
 
             except KeyError as e:
