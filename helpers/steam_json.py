@@ -24,8 +24,9 @@ def read(user):
             print("KeyError: {}")
             return 0
 
-"""CURRENTLY THIS MESSES UP THE FILE WITH /'s N SHIT"""
+
 def write(user_discord, user_steamid):
+    """CURRENTLY THIS MESSES UP THE FILE WITH /'s N SHIT"""
     with open(id_file) as data_file:
         data = json.load(data_file)
         try:

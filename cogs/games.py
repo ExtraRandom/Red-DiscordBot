@@ -52,9 +52,6 @@ class Games:
         user = str(ctx.message.author)
         inp = ctx.message.content
 
-        # print(inp)
-        # print(user)
-
         if inp.replace(" ", "") != "!pd2":
             entered_name = inp.split()[1:]
             entered_name = ' '.join(entered_name).replace("@", "")
@@ -408,37 +405,7 @@ class Games:
             write_json = steam_json.write(user, steamid)
             print(write_json)
             pass
-
-    @commands.command()
-    async def pewds(self):
-        """Temporary - Find out if PewDiePie has hit 50m subs yet"""
-        if not t.yt_api == "":
-            try:
-                link = "https://www.googleapis.com/youtube/v3/channels?part=statistics&id=UC-lHJZR3Gqxm24_Vd_AJ5Yw&k" \
-                       "ey={}".format(t.yt_api)
-
-                with aiohttp.ClientSession() as session:
-                    async with session.get(link)as resp:
-                        data = await resp.text()
-                        #print(data)#.replace("'",'\\"'))
-                        tdata = json.loads(data)
-                        #print(tdata)
-                        subs = int(tdata['items'][0]['statistics']['subscriberCount'])
-                        to_go = 50000000 - subs
-                        to_go_count = "{:,}".format(to_go)
-                        sub_count = "{:,}".format(subs)
-                        await self.bot.say("PewDiePie currently has {} subs, {} until 50m.".format(sub_count,
-                                                                                                   to_go_count))
-
-            except KeyError as e:
-                await self.bot.say("Error Getting Subs - KeyError {} - Channel may have already been deleted. "
-                                   "Try this link: <https://www.youtube.com/user/PewDiePie>".format(e))
-            except Exception as e:
-                await self.bot.say("An Error occurred. Error: {} - Channel may have already been deleted. "
-                                   "Try this link: <https://www.youtube.com/user/PewDiePie>".format(e))
-        else:
-            await self.bot.say("No YT API Key. Add one in helpers/tokens.py")
-
+    
 
 def get_top5(data):
     """Get top 5 stats from given data - should probably rename this somewhen"""
