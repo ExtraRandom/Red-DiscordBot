@@ -43,7 +43,11 @@ class Games:
                                             "Average Search Time: {} seconds"
                                             "".format(scheduler.capitalize(), servers, players, searching, search_time))
         embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
-        await self.bot.say(embed=embed)
+        try:
+            await self.bot.say(embed=embed)
+        except discord.HTTPException:
+            await self.bot.say("I need the `Embed links` permission "
+                               "to send this")
 
     @commands.command(pass_context=True)
     async def pd2(self, ctx):
@@ -148,7 +152,11 @@ class Games:
 
                         embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
-                        await self.bot.say(embed=embed)
+                        try:
+                            await self.bot.say(embed=embed)
+                        except discord.HTTPException:
+                            await self.bot.say("I need the `Embed links` permission "
+                                               "to send this")
 
             except KeyError as e:
                 log.warn("KeyError: {}".format(e))
@@ -242,8 +250,11 @@ class Games:
 
                         embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
-                        await self.bot.say(embed=embed)
-
+                        try:
+                            await self.bot.say(embed=embed)
+                        except discord.HTTPException:
+                            await self.bot.say("I need the `Embed links` permission "
+                                               "to send this")
             except KeyError as e:
                 self.bot.say("Error finding stat - {}".format(e))
 
@@ -304,7 +315,11 @@ class Games:
 
                         embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
-                        await self.bot.say(embed=embed)
+                        try:
+                            await self.bot.say(embed=embed)
+                        except discord.HTTPException:
+                            await self.bot.say("I need the `Embed links` permission "
+                                               "to send this")
 
             #except Exception as e:
                 #print("oh no")
@@ -389,7 +404,11 @@ class Games:
 
         await self.bot.delete_message(msg)
         if 'embed' in locals():
-            await self.bot.say(embed=embed)
+            try:
+                await self.bot.say(embed=embed)
+            except discord.HTTPException:
+                await self.bot.say("I need the `Embed links` permission "
+                                   "to send this")
         else:
             await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
                                "status if issue persists.")
