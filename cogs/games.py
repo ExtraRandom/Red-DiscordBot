@@ -11,7 +11,7 @@ from cogs.utils import checks
 
 import json
 
-# from mcstatus import MinecraftServer
+from mcstatus import MinecraftServer
 
 
 loop = asyncio.get_event_loop()
@@ -22,7 +22,65 @@ class Games:
     def __init__(self, bot):
         self.bot = bot
 
-    # TODO fix and re-add minecraft ip command (see code_dump.py)
+    # TODO remove '§' from text and format the embed better
+
+    @commands.command(name="mc")
+    async def minecraft_ip(self, ip: str):
+        """Get Status of Minecraft Servers"""
+        try:
+            server = MinecraftServer.lookup(ip)
+            status = server.status()
+            data = status.raw
+            # print(data)
+            ver = data['version']['name']
+            s_desc = "n/a"
+            try:
+                s_desc = data['description']['text']
+            except TypeError:
+                s_desc = data['description']
+
+            player_count = int(data['players']['online'])
+            player_limit = int(data['players']['max'])
+
+            if player_count > 1000:
+                try_players = False
+            else:
+                try_players = True
+
+            players = ""
+
+            if try_players:
+                try:
+                    for player in data['players']['sample']:
+                        players += "{}, ".format(player['name'])
+                    players = players[:-2]  # Remove final comma and the space after it
+                except Exception:
+                    players = "None"
+            else:
+                players = "N/A"
+
+            embed = discord.Embed(title="Status of {}".format(ip),
+                                  colour=discord.Colour.green())
+
+            embed.add_field(name="Info", value="Version Info: {}\n\n"
+                                               "Player Count/Limit: **{}**/**{}**\n"
+                                               "Player Sample: {}\n\n"
+                                               "Description: {}".format(ver, player_count, player_limit, players,
+                                                                        s_desc))
+
+            await self.bot.say(embed=embed)
+
+        except ValueError as e:
+            await self.bot.say("Error Occured - Check IP is correct - Value Error")
+            log.warn(e)
+
+        except ConnectionRefusedError as e:
+            await self.bot.say("Error Occured - Target Refused Connection")
+            log.warn(e)
+
+        except Exception as e:
+            await self.bot.say("Error Occured - Server didn't respond")
+            log.warn(e)
 
     @commands.command()
     async def status(self):
