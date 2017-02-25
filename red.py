@@ -328,7 +328,7 @@ def initialize(bot_class=Bot, formatter_class=Formatter):
             bot.oauth_url = url
             print(url)
 
-        print("\nOfficial server: https://discord.me/Red-DiscordBot")
+        print("\nOfficial server: https://discord.gg/red")
 
         print("Make sure to keep your bot updated. Select the 'Update' "
               "option from the launcher.")
@@ -372,6 +372,10 @@ def initialize(bot_class=Bot, formatter_class=Formatter):
         elif isinstance(error, commands.NoPrivateMessage):
             await bot.send_message(channel, "That command is not "
                                             "available in DMs.")
+        elif isinstance(error, commands.CommandOnCooldown):
+            await bot.send_message(channel, "This command is on cooldown. "
+                                            "Try again in {:.2f}s"
+                                            "".format(error.retry_after))
         else:
             bot.logger.exception(type(error).__name__, exc_info=error)
 
