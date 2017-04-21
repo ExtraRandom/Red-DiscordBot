@@ -5,7 +5,7 @@ from .utils import checks
 from __main__ import send_cmd_help, settings
 from datetime import datetime
 from collections import deque, defaultdict
-from cogs.utils.chat_formatting import escape_mass_mentions, box
+from cogs.utils.chat_formatting import escape_mass_mentions, box, pagify
 import os
 import re
 import logging
@@ -17,7 +17,9 @@ ACTIONS_REPR = {
     "KICK"    : ("Kick", "\N{WOMANS BOOTS}"),
     "CMUTE"   : ("Channel mute", "\N{SPEAKER WITH CANCELLATION STROKE}"),
     "SMUTE"   : ("Server mute", "\N{SPEAKER WITH CANCELLATION STROKE}"),
-    "SOFTBAN" : ("Softban", "\N{DASH SYMBOL} \N{HAMMER}")
+    "SOFTBAN" : ("Softban", "\N{DASH SYMBOL} \N{HAMMER}"),
+    "HACKBAN" : ("Preemptive ban", "\N{BUST IN SILHOUETTE} \N{HAMMER}"),
+    "UNBAN"   : ("Unban", "\N{DOVE OF PEACE}")
 }
 
 ACTIONS_CASES = {
@@ -25,13 +27,16 @@ ACTIONS_CASES = {
     "KICK"    : True,
     "CMUTE"   : False,
     "SMUTE"   : True,
-    "SOFTBAN" : True
+    "SOFTBAN" : True,
+    "HACKBAN" : True,
+    "UNBAN"   : True
 }
 
 default_settings = {
-    "ban_mention_spam" : False,
-    "delete_repeats"   : False,
-    "mod-log"          : None
+    "ban_mention_spam"  : False,
+    "delete_repeats"    : False,
+    "mod-log"           : None,
+    "respect_hierarchy" : False
 }
 
 
@@ -56,13 +61,39 @@ class NoModLogChannel(ModError):
     pass
 
 
+class NoModLogAccess(ModError):
+    pass
+
+
+class TempCache:
+    """
+    This is how we avoid events such as ban and unban
+    from triggering twice in the mod-log.
+    Kinda hacky but functioning
+    """
+    def __init__(self, bot):
+        self.bot = bot
+        self._cache = []
+
+    def add(self, user, server, action, seconds=1):
+        tmp = (user.id, server.id, action)
+        self._cache.append(tmp)
+
+        async def delete_value():
+            await asyncio.sleep(seconds)
+            self._cache.remove(tmp)
+
+        self.bot.loop.create_task(delete_value())
+
+    def check(self, user, server, action):
+        return (user.id, server.id, action) in self._cache
+
+
 class Mod:
     """Moderation tools."""
 
     def __init__(self, bot):
         self.bot = bot
-        self.whitelist_list = dataIO.load_json("data/mod/whitelist.json")
-        self.blacklist_list = dataIO.load_json("data/mod/blacklist.json")
         self.ignore_list = dataIO.load_json("data/mod/ignorelist.json")
         self.filter = dataIO.load_json("data/mod/filter.json")
         self.past_names = dataIO.load_json("data/mod/past_names.json")
@@ -72,7 +103,7 @@ class Mod:
         self.cache = defaultdict(lambda: deque(maxlen=3))
         self.cases = dataIO.load_json("data/mod/modlog.json")
         self.last_case = defaultdict(dict)
-        self._tmp_banned_cache = []
+        self.temp_cache = TempCache(bot)
         perms_cache = dataIO.load_json("data/mod/perms_cache.json")
         self._perms_cache = defaultdict(dict, perms_cache)
 
@@ -85,34 +116,32 @@ class Mod:
             await send_cmd_help(ctx)
             roles = settings.get_server(server).copy()
             _settings = {**self.settings[server.id], **roles}
+            if "respect_hierarchy" not in _settings:
+                _settings["respect_hierarchy"] = default_settings["respect_hierarchy"]
             if "delete_delay" not in _settings:
-                _settings["delete_delay"] = -1
+                _settings["delete_delay"] = "Disabled"
+
             msg = ("Admin role: {ADMIN_ROLE}\n"
                    "Mod role: {MOD_ROLE}\n"
                    "Mod-log: {mod-log}\n"
                    "Delete repeats: {delete_repeats}\n"
                    "Ban mention spam: {ban_mention_spam}\n"
                    "Delete delay: {delete_delay}\n"
+                   "Respects hierarchy: {respect_hierarchy}"
                    "".format(**_settings))
             await self.bot.say(box(msg))
 
-    @modset.command(name="adminrole", pass_context=True, no_pm=True)
-    async def _modset_adminrole(self, ctx, *, role_name: str):
-        """Sets the admin role for this server, case insensitive."""
-        server = ctx.message.server
-        if server.id not in settings.servers:
-            await self.bot.say("Remember to set modrole too.")
-        settings.set_server_admin(server, role_name)
-        await self.bot.say("Admin role set to '{}'".format(role_name))
+    @modset.command(name="adminrole", pass_context=True, no_pm=True, hidden=True)
+    async def _modset_adminrole(self, ctx):
+        """Use [p]set adminrole instead"""
+        await self.bot.say("This command has been renamed "
+                           "`{}set adminrole`".format(ctx.prefix))
 
-    @modset.command(name="modrole", pass_context=True, no_pm=True)
-    async def _modset_modrole(self, ctx, *, role_name: str):
-        """Sets the mod role for this server, case insensitive."""
-        server = ctx.message.server
-        if server.id not in settings.servers:
-            await self.bot.say("Remember to set adminrole too.")
-        settings.set_server_mod(server, role_name)
-        await self.bot.say("Mod role set to '{}'".format(role_name))
+    @modset.command(name="modrole", pass_context=True, no_pm=True, hidden=True)
+    async def _modset_modrole(self, ctx):
+        """Use [p]set modrole instead"""
+        await self.bot.say("This command has been renamed "
+                           "`{}set modrole`".format(ctx.prefix))
 
     @modset.command(pass_context=True, no_pm=True)
     async def modlog(self, ctx, channel : discord.Channel=None):
@@ -208,7 +237,7 @@ class Mod:
     @modset.command(pass_context=True, no_pm=True, name='cases')
     async def set_cases(self, ctx, action: str = None, enabled: bool = None):
         """Enables or disables case creation for each type of mod action
-        
+
         Enabled can be 'on' or 'off'"""
         server = ctx.message.server
 
@@ -252,23 +281,49 @@ class Mod:
                    )
             await self.bot.say(msg)
 
+    @modset.command(pass_context=True, no_pm=True)
+    @checks.serverowner_or_permissions()
+    async def hierarchy(self, ctx):
+        """Toggles role hierarchy check for mods / admins"""
+        server = ctx.message.server
+        toggled = self.settings[server.id].get("respect_hierarchy",
+                                               default_settings["respect_hierarchy"])
+        if not toggled:
+            self.settings[server.id]["respect_hierarchy"] = True
+            await self.bot.say("Role hierarchy will be checked when "
+                               "moderation commands are issued.")
+        else:
+            self.settings[server.id]["respect_hierarchy"] = False
+            await self.bot.say("Role hierarchy will be ignored when "
+                               "moderation commands are issued.")
+        dataIO.save_json("data/mod/settings.json", self.settings)
+
     @commands.command(no_pm=True, pass_context=True)
     @checks.admin_or_permissions(kick_members=True)
     async def kick(self, ctx, user: discord.Member, *, reason: str = None):
         """Kicks user."""
         author = ctx.message.author
         server = author.server
+
+        if author == user:
+            await self.bot.say("I cannot let you do that. Self-harm is "
+                               "bad \N{PENSIVE FACE}")
+            return
+        elif not self.is_allowed_by_hierarchy(server, author, user):
+            await self.bot.say("I cannot let you do that. You are "
+                               "not higher than the user in the role "
+                               "hierarchy.")
+            return
+
         try:
             await self.bot.kick(user)
             logger.info("{}({}) kicked {}({})".format(
                 author.name, author.id, user.name, user.id))
-            if self.settings[server.id].get('kick_cases',
-                                            default_settings['kick_cases']):
-                await self.new_case(server,
-                                    action="KICK",
-                                    mod=author,
-                                    user=user,
-                                    reason=reason)
+            await self.new_case(server,
+                                action="KICK",
+                                mod=author,
+                                user=user,
+                                reason=reason)
             await self.bot.say("Done. That felt good.")
         except discord.errors.Forbidden:
             await self.bot.say("I'm not allowed to do that.")
@@ -284,6 +339,16 @@ class Mod:
         Minimum 0 days, maximum 7. Defaults to 0."""
         author = ctx.message.author
         server = author.server
+
+        if author == user:
+            await self.bot.say("I cannot let you do that. Self-harm is "
+                               "bad \N{PENSIVE FACE}")
+            return
+        elif not self.is_allowed_by_hierarchy(server, author, user):
+            await self.bot.say("I cannot let you do that. You are "
+                               "not higher than the user in the role "
+                               "hierarchy.")
+            return
 
         if days:
             if days.isdigit():
@@ -302,25 +367,63 @@ class Mod:
             return
 
         try:
-            self._tmp_banned_cache.append(user)
+            self.temp_cache.add(user, server, "BAN")
             await self.bot.ban(user, days)
             logger.info("{}({}) banned {}({}), deleting {} days worth of messages".format(
                 author.name, author.id, user.name, user.id, str(days)))
-            if self.settings[server.id].get('ban_cases',
-                                            default_settings['ban_cases']):
-                await self.new_case(server,
-                                    action="BAN",
-                                    mod=author,
-                                    user=user,
-                                    reason=reason)
+            await self.new_case(server,
+                                action="BAN",
+                                mod=author,
+                                user=user,
+                                reason=reason)
             await self.bot.say("Done. It was about time.")
         except discord.errors.Forbidden:
             await self.bot.say("I'm not allowed to do that.")
         except Exception as e:
             print(e)
-        finally:
-            await asyncio.sleep(1)
-            self._tmp_banned_cache.remove(user)
+
+    @commands.command(no_pm=True, pass_context=True)
+    @checks.admin_or_permissions(ban_members=True)
+    async def hackban(self, ctx, user_id: int, *, reason: str = None):
+        """Preemptively bans user from the server
+
+        A user ID needs to be provided
+        If the user is present in the server a normal ban will be
+        issued instead"""
+        user_id = str(user_id)
+        author = ctx.message.author
+        server = author.server
+
+        ban_list = await self.bot.get_bans(server)
+        is_banned = discord.utils.get(ban_list, id=user_id)
+
+        if is_banned:
+            await self.bot.say("User is already banned.")
+            return
+
+        user = server.get_member(user_id)
+        if user is not None:
+            await ctx.invoke(self.ban, user=user, reason=reason)
+            return
+
+        try:
+            await self.bot.http.ban(user_id, server.id)
+        except discord.NotFound:
+            await self.bot.say("User not found. Have you provided the "
+                               "correct user ID?")
+        except discord.Forbidden:
+            await self.bot.say("I lack the permissions to do this.")
+        else:
+            logger.info("{}({}) hackbanned {}"
+                        "".format(author.name, author.id, user_id))
+            user = await self.bot.get_user_info(user_id)
+            await self.new_case(server,
+                                action="HACKBAN",
+                                mod=author,
+                                user=user,
+                                reason=reason)
+            await self.bot.say("Done. The user will not be able to join this "
+                               "server.")
 
     @commands.command(no_pm=True, pass_context=True)
     @checks.admin_or_permissions(ban_members=True)
@@ -330,6 +433,17 @@ class Mod:
         channel = ctx.message.channel
         can_ban = channel.permissions_for(server.me).ban_members
         author = ctx.message.author
+
+        if author == user:
+            await self.bot.say("I cannot let you do that. Self-harm is "
+                               "bad \N{PENSIVE FACE}")
+            return
+        elif not self.is_allowed_by_hierarchy(server, author, user):
+            await self.bot.say("I cannot let you do that. You are "
+                               "not higher than the user in the role "
+                               "hierarchy.")
+            return
+
         try:
             invite = await self.bot.create_invite(server, max_age=3600*24)
             invite = "\nInvite: " + invite
@@ -343,18 +457,17 @@ class Mod:
                               "You can now join the server again.{}".format(invite))
                 except:
                     pass
-                self._tmp_banned_cache.append(user)
+                self.temp_cache.add(user, server, "BAN")
                 await self.bot.ban(user, 1)
                 logger.info("{}({}) softbanned {}({}), deleting 1 day worth "
                     "of messages".format(author.name, author.id, user.name,
                      user.id))
-                if self.settings[server.id].get('softban_cases',
-                                                default_settings['softban_cases']):
-                    await self.new_case(server,
-                                        action="SOFTBAN",
-                                        mod=author,
-                                        user=user,
-                                        reason=reason)
+                await self.new_case(server,
+                                    action="SOFTBAN",
+                                    mod=author,
+                                    user=user,
+                                    reason=reason)
+                self.temp_cache.add(user, server, "UNBAN")
                 await self.bot.unban(server, user)
                 await self.bot.say("Done. Enough chaos.")
             except discord.errors.Forbidden:
@@ -362,9 +475,6 @@ class Mod:
                 await self.bot.delete_message(msg)
             except Exception as e:
                 print(e)
-            finally:
-                await asyncio.sleep(1)
-                self._tmp_banned_cache.remove(user)
         else:
             await self.bot.say("I'm not allowed to do that.")
 
@@ -382,7 +492,7 @@ class Mod:
             await self.bot.say("Done.")
         except discord.Forbidden:
             await self.bot.say("I cannot do that, I lack the "
-                "\"Manage Nicknames\" permission.")
+                               "\"Manage Nicknames\" permission.")
 
     @commands.group(pass_context=True, no_pm=True, invoke_without_command=True)
     @checks.mod_or_permissions(administrator=True)
@@ -401,10 +511,17 @@ class Mod:
         channel = ctx.message.channel
         server = ctx.message.server
         overwrites = channel.overwrites_for(user)
+
         if overwrites.send_messages is False:
             await self.bot.say("That user can't send messages in this "
                                "channel.")
             return
+        elif not self.is_allowed_by_hierarchy(server, author, user):
+            await self.bot.say("I cannot let you do that. You are "
+                               "not higher than the user in the role "
+                               "hierarchy.")
+            return
+
         self._perms_cache[user.id][channel.id] = overwrites.send_messages
         overwrites.send_messages = False
         try:
@@ -415,14 +532,12 @@ class Mod:
                                "lower than myself in the role hierarchy.")
         else:
             dataIO.save_json("data/mod/perms_cache.json", self._perms_cache)
-            if self.settings[server.id].get('cmute_cases',
-                            default_settings['cmute_cases']):
-                await self.new_case(server,
-                                    action="CMUTE",
-                                    channel=channel,
-                                    mod=author,
-                                    user=user,
-                                    reason=reason)
+            await self.new_case(server,
+                                action="CMUTE",
+                                channel=channel,
+                                mod=author,
+                                user=user,
+                                reason=reason)
             await self.bot.say("User has been muted in this channel.")
 
     @checks.mod_or_permissions(administrator=True)
@@ -431,6 +546,13 @@ class Mod:
         """Mutes user in the server"""
         author = ctx.message.author
         server = ctx.message.server
+
+        if not self.is_allowed_by_hierarchy(server, author, user):
+            await self.bot.say("I cannot let you do that. You are "
+                               "not higher than the user in the role "
+                               "hierarchy.")
+            return
+
         register = {}
         for channel in server.channels:
             if channel.type != discord.ChannelType.text:
@@ -455,13 +577,11 @@ class Mod:
             return
         self._perms_cache[user.id] = register
         dataIO.save_json("data/mod/perms_cache.json", self._perms_cache)
-        if self.settings[server.id].get('smute_cases',
-                        default_settings['smute_cases']):
-            await self.new_case(server,
-                                action="SMUTE",
-                                mod=author,
-                                user=user,
-                                reason=reason)
+        await self.new_case(server,
+                            action="SMUTE",
+                            mod=author,
+                            user=user,
+                            reason=reason)
         await self.bot.say("User has been muted in this server.")
 
     @commands.group(pass_context=True, no_pm=True, invoke_without_command=True)
@@ -478,11 +598,20 @@ class Mod:
     async def channel_unmute(self, ctx, user : discord.Member):
         """Unmutes user in the current channel"""
         channel = ctx.message.channel
+        author = ctx.message.author
+        server = ctx.message.server
         overwrites = channel.overwrites_for(user)
+
         if overwrites.send_messages:
             await self.bot.say("That user doesn't seem to be muted "
                                "in this channel.")
             return
+        elif not self.is_allowed_by_hierarchy(server, author, user):
+            await self.bot.say("I cannot let you do that. You are "
+                               "not higher than the user in the role "
+                               "hierarchy.")
+            return
+
         if user.id in self._perms_cache:
             old_value = self._perms_cache[user.id].get(channel.id)
         else:
@@ -514,11 +643,19 @@ class Mod:
     async def server_unmute(self, ctx, user : discord.Member):
         """Unmutes user in the server"""
         server = ctx.message.server
+        author = ctx.message.author
+
         if user.id not in self._perms_cache:
             await self.bot.say("That user doesn't seem to have been muted with {0}mute commands. "
                                "Unmute them in the channels you want with `{0}unmute <user>`"
                                "".format(ctx.prefix))
             return
+        elif not self.is_allowed_by_hierarchy(server, author, user):
+            await self.bot.say("I cannot let you do that. You are "
+                               "not higher than the user in the role "
+                               "hierarchy.")
+            return
+
         for channel in server.channels:
             if channel.type != discord.ChannelType.text:
                 continue
@@ -898,81 +1035,12 @@ class Mod:
         except NoModLogChannel:
             await self.bot.say("There's no mod-log channel set.")
         except CaseMessageNotFound:
-            await self.bot.say("Couldn't find the case's message.")
+            await self.bot.say("I couldn't find the case's message.")
+        except NoModLogAccess:
+            await self.bot.say("I'm not allowed to access the mod-log "
+                               "channel (or its message history)")
         else:
             await self.bot.say("Case #{} updated.".format(case))
-
-    @commands.group(pass_context=True)
-    @checks.is_owner()
-    async def blacklist(self, ctx):
-        """Bans user from using the bot"""
-        if ctx.invoked_subcommand is None:
-            await send_cmd_help(ctx)
-
-    @blacklist.command(name="add")
-    async def _blacklist_add(self, user: discord.Member):
-        """Adds user to bot's blacklist"""
-        if user.id not in self.blacklist_list:
-            self.blacklist_list.append(user.id)
-            dataIO.save_json("data/mod/blacklist.json", self.blacklist_list)
-            await self.bot.say("User has been added to blacklist.")
-        else:
-            await self.bot.say("User is already blacklisted.")
-
-    @blacklist.command(name="remove")
-    async def _blacklist_remove(self, user: discord.Member):
-        """Removes user from bot's blacklist"""
-        if user.id in self.blacklist_list:
-            self.blacklist_list.remove(user.id)
-            dataIO.save_json("data/mod/blacklist.json", self.blacklist_list)
-            await self.bot.say("User has been removed from blacklist.")
-        else:
-            await self.bot.say("User is not in blacklist.")
-
-    @blacklist.command(name="clear")
-    async def _blacklist_clear(self):
-        """Clears the blacklist"""
-        self.blacklist_list = []
-        dataIO.save_json("data/mod/blacklist.json", self.blacklist_list)
-        await self.bot.say("Blacklist is now empty.")
-
-    @commands.group(pass_context=True)
-    @checks.is_owner()
-    async def whitelist(self, ctx):
-        """Users who will be able to use the bot"""
-        if ctx.invoked_subcommand is None:
-            await send_cmd_help(ctx)
-
-    @whitelist.command(name="add")
-    async def _whitelist_add(self, user: discord.Member):
-        """Adds user to bot's whitelist"""
-        if user.id not in self.whitelist_list:
-            if not self.whitelist_list:
-                msg = "\nAll users not in whitelist will be ignored (owner, admins and mods excluded)"
-            else:
-                msg = ""
-            self.whitelist_list.append(user.id)
-            dataIO.save_json("data/mod/whitelist.json", self.whitelist_list)
-            await self.bot.say("User has been added to whitelist." + msg)
-        else:
-            await self.bot.say("User is already whitelisted.")
-
-    @whitelist.command(name="remove")
-    async def _whitelist_remove(self, user: discord.Member):
-        """Removes user from bot's whitelist"""
-        if user.id in self.whitelist_list:
-            self.whitelist_list.remove(user.id)
-            dataIO.save_json("data/mod/whitelist.json", self.whitelist_list)
-            await self.bot.say("User has been removed from whitelist.")
-        else:
-            await self.bot.say("User is not in whitelist.")
-
-    @whitelist.command(name="clear")
-    async def _whitelist_clear(self):
-        """Clears the whitelist"""
-        self.whitelist_list = []
-        dataIO.save_json("data/mod/whitelist.json", self.whitelist_list)
-        await self.bot.say("Whitelist is now empty.")
 
     @commands.group(pass_context=True, no_pm=True)
     @checks.admin_or_permissions(manage_channels=True)
@@ -1072,13 +1140,15 @@ class Mod:
             await send_cmd_help(ctx)
             server = ctx.message.server
             author = ctx.message.author
-            msg = ""
-            if server.id in self.filter.keys():
-                if self.filter[server.id] != []:
-                    word_list = self.filter[server.id]
-                    for w in word_list:
-                        msg += '"' + w + '" '
-                    await self.bot.send_message(author, "Words filtered in this server: " + msg)
+            if server.id in self.filter:
+                if self.filter[server.id]:
+                    words = ", ".join(self.filter[server.id])
+                    words = "Filtered in this server:\n\n" + words
+                    try:
+                        for page in pagify(words, delims=[" ", "\n"], shorten_by=8):
+                            await self.bot.send_message(author, page)
+                    except discord.Forbidden:
+                        await self.bot.say("I can't send direct messages to you.")
 
     @_filter.command(name="add", pass_context=True)
     async def filter_add(self, ctx, *words: str):
@@ -1276,7 +1346,21 @@ class Mod:
         else:
             return False
 
+    def is_allowed_by_hierarchy(self, server, mod, user):
+        toggled = self.settings[server.id].get("respect_hierarchy",
+                                               default_settings["respect_hierarchy"])
+        is_special = mod == server.owner or mod.id == self.bot.settings.owner
+
+        if not toggled:
+            return True
+        else:
+            return mod.top_role.position > user.top_role.position or is_special
+
     async def new_case(self, server, *, action, mod=None, user, reason=None, until=None, channel=None):
+        action_type = action.lower() + "_cases"
+        if not self.settings[server.id].get(action_type, default_settings[action_type]):
+            return
+
         mod_channel = server.get_channel(self.settings[server.id]["mod-log"])
         if mod_channel is None:
             return
@@ -1292,10 +1376,10 @@ class Mod:
             "modified"     : None,
             "action"       : action,
             "channel"      : channel.id if channel else None,
-            "user"         : user.name,
+            "user"         : str(user),
             "user_id"      : user.id,
             "reason"       : reason,
-            "moderator"    : mod.name if mod is not None else None,
+            "moderator"    : str(mod) if mod is not None else None,
             "moderator_id" : mod.id if mod is not None else None,
             "amended_by"   : None,
             "amended_id"   : None,
@@ -1330,12 +1414,12 @@ class Mod:
         if case["moderator_id"] is not None:
             if case["moderator_id"] != mod.id:
                 if self.is_admin_or_superior(mod):
-                    case["amended_by"] = mod.name
+                    case["amended_by"] = str(mod)
                     case["amended_id"] = mod.id
                 else:
                     raise UnauthorizedCaseEdit()
         else:
-            case["moderator"] = mod.name
+            case["moderator"] = str(mod)
             case["moderator_id"] = mod.id
 
         if case["reason"]:  # Existing reason
@@ -1349,11 +1433,18 @@ class Mod:
 
         dataIO.save_json("data/mod/modlog.json", self.cases)
 
-        msg = await self.bot.get_message(channel, case["message"])
-        if msg:
-            await self.bot.edit_message(msg, case_msg)
-        else:
+        if case["message"] is None:  # The case's message was never sent
             raise CaseMessageNotFound()
+
+        try:
+            msg = await self.bot.get_message(channel, case["message"])
+        except discord.NotFound:
+            raise CaseMessageNotFound()
+        except discord.Forbidden:
+            raise NoModLogAccess()
+        else:
+            await self.bot.edit_message(msg, case_msg)
+
 
     def format_case_msg(self, case):
         tmp = case.copy()
@@ -1446,7 +1537,7 @@ class Mod:
             mentions = set(message.mentions)
             if len(mentions) >= max_mentions:
                 try:
-                    self._tmp_banned_cache.append(author)
+                    self.temp_cache.add(author, server, "BAN")
                     await self.bot.ban(author, 1)
                 except:
                     logger.info("Failed to ban member for mention spam in "
@@ -1458,9 +1549,6 @@ class Mod:
                                         user=author,
                                         reason="Mention spam (Autoban)")
                     return True
-                finally:
-                    await asyncio.sleep(1)
-                    self._tmp_banned_cache.remove(author)
         return False
 
     async def on_command(self, command, ctx):
@@ -1505,11 +1593,17 @@ class Mod:
             deleted = await self.check_mention_spam(message)
 
     async def on_member_ban(self, member):
-        if member not in self._tmp_banned_cache:
-            server = member.server
+        server = member.server
+        if not self.temp_cache.check(member, server, "BAN"):
             await self.new_case(server,
                                 user=member,
                                 action="BAN")
+
+    async def on_member_unban(self, server, user):
+        if not self.temp_cache.check(user, server, "UNBAN"):
+            await self.new_case(server,
+                                user=user,
+                                action="UNBAN")
 
     async def check_names(self, before, after):
         if before.name != after.name:
@@ -1578,8 +1672,6 @@ def check_files():
     ignore_list = {"SERVERS": [], "CHANNELS": []}
 
     files = {
-        "blacklist.json"      : [],
-        "whitelist.json"      : [],
         "ignorelist.json"     : ignore_list,
         "filter.json"         : {},
         "past_names.json"     : {},

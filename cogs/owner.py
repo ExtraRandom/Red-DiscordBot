@@ -39,14 +39,13 @@ class OwnerUnloadWithoutReloadError(CogUnloadError):
 
 
 class Owner:
-    """All owner-only commands that relate to debug bot operations.
-    """
+    """All owner-only commands that relate to debug bot operations."""
 
     def __init__(self, bot):
         self.bot = bot
         self.setowner_lock = False
-        self.file_path = "data/red/disabled_commands.json"
-        self.disabled_commands = dataIO.load_json(self.file_path)
+        self.disabled_commands = dataIO.load_json("data/red/disabled_commands.json")
+        self.global_ignores = dataIO.load_json("data/red/global_ignores.json")
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
     def __unload(self):
@@ -54,46 +53,44 @@ class Owner:
 
     @commands.command()
     @checks.is_owner()
-    async def load(self, *, module: str):
-        """Loads a module
+    async def load(self, *, cog_name: str):
+        """Loads a cog
 
         Example: load mod"""
-        module = module.strip()
+        module = cog_name.strip()
         if "cogs." not in module:
             module = "cogs." + module
         try:
             self._load_cog(module)
         except CogNotFoundError:
-            await self.bot.say("That module could not be found.")
+            await self.bot.say("That cog could not be found.")
         except CogLoadError as e:
             log.exception(e)
             traceback.print_exc()
-            await self.bot.say("There was an issue loading the module. Check"
-                               " your console or logs for more information.\n"
-                               "\nError: `{}`".format(e.args[0]))
+            await self.bot.say("There was an issue loading the cog. Check"
+                               " your console or logs for more information.")
         except Exception as e:
             log.exception(e)
             traceback.print_exc()
-            await self.bot.say('Module was found and possibly loaded but '
+            await self.bot.say('Cog was found and possibly loaded but '
                                'something went wrong. Check your console '
-                               'or logs for more information.\n\n'
-                               'Error: `{}`'.format(e.args[0]))
+                               'or logs for more information.')
         else:
             set_cog(module, True)
             await self.disable_commands()
-            await self.bot.say("Module enabled.")
+            await self.bot.say("The cog has been loaded.")
 
     @commands.group(invoke_without_command=True)
     @checks.is_owner()
-    async def unload(self, *, module: str):
-        """Unloads a module
+    async def unload(self, *, cog_name: str):
+        """Unloads a cog
 
         Example: unload mod"""
-        module = module.strip()
+        module = cog_name.strip()
         if "cogs." not in module:
             module = "cogs." + module
         if not self._does_cogfile_exist(module):
-            await self.bot.say("That module file doesn't exist. I will not"
+            await self.bot.say("That cog file doesn't exist. I will not"
                                " turn off autoloading at start just in case"
                                " this isn't supposed to happen.")
         else:
@@ -106,14 +103,14 @@ class Owner:
         except CogUnloadError as e:
             log.exception(e)
             traceback.print_exc()
-            await self.bot.say('Unable to safely disable that module.')
+            await self.bot.say('Unable to safely unload that cog.')
         else:
-            await self.bot.say("Module disabled.")
+            await self.bot.say("The cog has been unloaded.")
 
     @unload.command(name="all")
     @checks.is_owner()
     async def unload_all(self):
-        """Unloads all modules"""
+        """Unloads all cogs"""
         cogs = self._list_cogs()
         still_loaded = []
         for cog in cogs:
@@ -135,10 +132,11 @@ class Owner:
 
     @checks.is_owner()
     @commands.command(name="reload")
-    async def _reload(self, module):
-        """Reloads a module
+    async def _reload(self, *, cog_name: str):
+        """Reloads a cog
 
         Example: reload audio"""
+        module = cog_name.strip()
         if "cogs." not in module:
             module = "cogs." + module
 
@@ -150,19 +148,18 @@ class Owner:
         try:
             self._load_cog(module)
         except CogNotFoundError:
-            await self.bot.say("That module cannot be found.")
+            await self.bot.say("That cog cannot be found.")
         except NoSetupError:
-            await self.bot.say("That module does not have a setup function.")
+            await self.bot.say("That cog does not have a setup function.")
         except CogLoadError as e:
             log.exception(e)
             traceback.print_exc()
-            await self.bot.say("That module could not be loaded. Check your"
-                               " console or logs for more information.\n\n"
-                               "Error: `{}`".format(e.args[0]))
+            await self.bot.say("That cog could not be loaded. Check your"
+                               " console or logs for more information.")
         else:
             set_cog(module, True)
             await self.disable_commands()
-            await self.bot.say("Module reloaded.")
+            await self.bot.say("The cog has been reloaded.")
 
     @commands.command(name="cogs")
     @checks.is_owner()
@@ -258,7 +255,7 @@ class Owner:
 
     @commands.group(name="set", pass_context=True)
     async def _set(self, ctx):
-        """Changes Red's global settings."""
+        """Changes Red's core settings"""
         if ctx.invoked_subcommand is None:
             await self.bot.send_cmd_help(ctx)
             return
@@ -508,6 +505,125 @@ class Owner:
             await self.bot.say("Token set. Restart me.")
             log.debug("Token changed.")
 
+    @_set.command(name="adminrole", pass_context=True, no_pm=True)
+    @checks.serverowner()
+    async def _server_adminrole(self, ctx, *, role: discord.Role):
+        """Sets the admin role for this server"""
+        server = ctx.message.server
+        if server.id not in self.bot.settings.servers:
+            await self.bot.say("Remember to set modrole too.")
+        self.bot.settings.set_server_admin(server, role.name)
+        await self.bot.say("Admin role set to '{}'".format(role.name))
+
+    @_set.command(name="modrole", pass_context=True, no_pm=True)
+    @checks.serverowner()
+    async def _server_modrole(self, ctx, *, role: discord.Role):
+        """Sets the mod role for this server"""
+        server = ctx.message.server
+        if server.id not in self.bot.settings.servers:
+            await self.bot.say("Remember to set adminrole too.")
+        self.bot.settings.set_server_mod(server, role.name)
+        await self.bot.say("Mod role set to '{}'".format(role.name))
+
+    @commands.group(pass_context=True)
+    @checks.is_owner()
+    async def blacklist(self, ctx):
+        """Blacklist management commands
+
+        Blacklisted users will be unable to issue commands"""
+        if ctx.invoked_subcommand is None:
+            await self.bot.send_cmd_help(ctx)
+
+    @blacklist.command(name="add")
+    async def _blacklist_add(self, user: discord.Member):
+        """Adds user to Red's global blacklist"""
+        if user.id not in self.global_ignores["blacklist"]:
+            self.global_ignores["blacklist"].append(user.id)
+            self.save_global_ignores()
+            await self.bot.say("User has been blacklisted.")
+        else:
+            await self.bot.say("User is already blacklisted.")
+
+    @blacklist.command(name="remove")
+    async def _blacklist_remove(self, user: discord.Member):
+        """Removes user from Red's global blacklist"""
+        if user.id in self.global_ignores["blacklist"]:
+            self.global_ignores["blacklist"].remove(user.id)
+            self.save_global_ignores()
+            await self.bot.say("User has been removed from the blacklist.")
+        else:
+            await self.bot.say("User is not blacklisted.")
+
+    @blacklist.command(name="list")
+    async def _blacklist_list(self):
+        """Lists users on the blacklist"""
+        blacklist = self._populate_list(self.global_ignores["blacklist"])
+
+        if blacklist:
+            for page in blacklist:
+                await self.bot.say(box(page))
+        else:
+            await self.bot.say("The blacklist is empty.")
+
+    @blacklist.command(name="clear")
+    async def _blacklist_clear(self):
+        """Clears the global blacklist"""
+        self.global_ignores["blacklist"] = []
+        self.save_global_ignores()
+        await self.bot.say("Blacklist is now empty.")
+
+    @commands.group(pass_context=True)
+    @checks.is_owner()
+    async def whitelist(self, ctx):
+        """Whitelist management commands
+
+        If the whitelist is not empty, only whitelisted users will
+        be able to use Red"""
+        if ctx.invoked_subcommand is None:
+            await self.bot.send_cmd_help(ctx)
+
+    @whitelist.command(name="add")
+    async def _whitelist_add(self, user: discord.Member):
+        """Adds user to Red's global whitelist"""
+        if user.id not in self.global_ignores["whitelist"]:
+            if not self.global_ignores["whitelist"]:
+                msg = "\nNon-whitelisted users will be ignored."
+            else:
+                msg = ""
+            self.global_ignores["whitelist"].append(user.id)
+            self.save_global_ignores()
+            await self.bot.say("User has been whitelisted." + msg)
+        else:
+            await self.bot.say("User is already whitelisted.")
+
+    @whitelist.command(name="remove")
+    async def _whitelist_remove(self, user: discord.Member):
+        """Removes user from Red's global whitelist"""
+        if user.id in self.global_ignores["whitelist"]:
+            self.global_ignores["whitelist"].remove(user.id)
+            self.save_global_ignores()
+            await self.bot.say("User has been removed from the whitelist.")
+        else:
+            await self.bot.say("User is not whitelisted.")
+
+    @whitelist.command(name="list")
+    async def _whitelist_list(self):
+        """Lists users on the whitelist"""
+        whitelist = self._populate_list(self.global_ignores["whitelist"])
+
+        if whitelist:
+            for page in whitelist:
+                await self.bot.say(box(page))
+        else:
+            await self.bot.say("The whitelist is empty.")
+
+    @whitelist.command(name="clear")
+    async def _whitelist_clear(self):
+        """Clears the global whitelist"""
+        self.global_ignores["whitelist"] = []
+        self.save_global_ignores()
+        await self.bot.say("Whitelist is now empty.")
+
     @commands.command()
     @checks.is_owner()
     async def shutdown(self, silently : bool=False):
@@ -563,7 +679,7 @@ class Owner:
             comm_obj.enabled = False
             comm_obj.hidden = True
             self.disabled_commands.append(command)
-            dataIO.save_json(self.file_path, self.disabled_commands)
+            self.save_disabled_commands()
             await self.bot.say("Command has been disabled.")
 
     @command_disabler.command()
@@ -571,7 +687,7 @@ class Owner:
         """Enables commands/subcommands"""
         if command in self.disabled_commands:
             self.disabled_commands.remove(command)
-            dataIO.save_json(self.file_path, self.disabled_commands)
+            self.save_disabled_commands()
             await self.bot.say("Command enabled.")
         else:
             await self.bot.say("That command is not disabled.")
@@ -609,34 +725,12 @@ class Owner:
 
     @commands.command()
     @checks.is_owner()
-    async def join(self, invite_url: discord.Invite=None):
-        """Joins new server"""
-        if hasattr(self.bot.user, 'bot') and self.bot.user.bot is True:
-            # Check to ensure they're using updated discord.py
-            msg = ("I have a **BOT** tag, so I must be invited with an OAuth2"
-                   " link:\nFor more information: "
-                   "https://twentysix26.github.io/"
-                   "Red-Docs/red_guide_bot_accounts/#bot-invites")
-            await self.bot.say(msg)
-            if hasattr(self.bot, 'oauth_url'):
-                await self.bot.whisper("Here's my OAUTH2 link:\n{}".format(
-                    self.bot.oauth_url))
-            return
-
-        if invite_url is None:
-            await self.bot.say("I need a Discord Invite link for the "
-                               "server you want me to join.")
-            return
-
-        try:
-            await self.bot.accept_invite(invite_url)
-            await self.bot.say("Server joined.")
-            log.debug("We just joined {}".format(invite_url))
-        except discord.NotFound:
-            await self.bot.say("The invite was invalid or expired.")
-        except discord.HTTPException:
-            await self.bot.say("I wasn't able to accept the invite."
-                               " Try again.")
+    async def join(self):
+        """Shows Red's invite URL"""
+        if self.bot.user.bot:
+            await self.bot.whisper("Invite URL: " + self.bot.oauth_url)
+        else:
+            await self.bot.say("I'm not a bot account. I have no invite URL.")
 
     @commands.command(pass_context=True, no_pm=True)
     @checks.is_owner()
@@ -697,26 +791,42 @@ class Owner:
     @commands.command(pass_context=True)
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def contact(self, ctx, *, message : str):
-        """Sends message to the owner"""
+        """Sends a message to the owner"""
         if self.bot.settings.owner is None:
             await self.bot.say("I have no owner set.")
             return
+        server = ctx.message.server
         owner = discord.utils.get(self.bot.get_all_members(),
                                   id=self.bot.settings.owner)
         author = ctx.message.author
-        if ctx.message.channel.is_private is False:
-            server = ctx.message.server
-            source = ", server **{}** ({})".format(server.name, server.id)
+        footer = "User ID: " + author.id
+
+        if ctx.message.server is None:
+            source = "through DM"
         else:
-            source = ", direct message"
-        sender = "From **{}** ({}){}:\n\n".format(author, author.id, source)
-        message = sender + message
+            source = "from {}".format(server)
+            footer += " | Server ID: " + server.id
+
+        if isinstance(author, discord.Member):
+            colour = author.colour
+        else:
+            colour = discord.Colour.red()
+
+        description = "Sent by {} {}".format(author, source)
+
+        e = discord.Embed(colour=colour, description=message)
+        if author.avatar_url:
+            e.set_author(name=description, icon_url=author.avatar_url)
+        else:
+            e.set_author(name=description)
+        e.set_footer(text=footer)
+
         try:
-            await self.bot.send_message(owner, message)
-        except discord.errors.InvalidArgument:
+            await self.bot.send_message(owner, embed=e)
+        except discord.InvalidArgument:
             await self.bot.say("I cannot send your message, I'm unable to find"
                                " my owner... *sigh*")
-        except discord.errors.HTTPException:
+        except discord.HTTPException:
             await self.bot.say("Your message is too long.")
         except:
             await self.bot.say("I'm unable to deliver your message. Sorry.")
@@ -789,6 +899,44 @@ class Owner:
         except discord.HTTPException:
             await self.bot.say("I need the `Embed links` permission "
                                "to send this")
+
+    @commands.command(pass_context=True)
+    @checks.is_owner()
+    async def traceback(self, ctx, public: bool=False):
+        """Sends to the owner the last command exception that has occurred
+
+        If public (yes is specified), it will be sent to the chat instead"""
+        if not public:
+            destination = ctx.message.author
+        else:
+            destination = ctx.message.channel
+
+        if self.bot._last_exception:
+            for page in pagify(self.bot._last_exception):
+                await self.bot.send_message(destination, box(page, lang="py"))
+        else:
+            await self.bot.say("No exception has occurred yet.")
+
+    def _populate_list(self, _list):
+        """Used for both whitelist / blacklist
+
+        Returns a paginated list"""
+        users = []
+        total = len(_list)
+
+        for user_id in _list:
+            user = discord.utils.get(self.bot.get_all_members(), id=user_id)
+            if user:
+                users.append(str(user))
+
+        if users:
+            not_found = total - len(users)
+            users = ", ".join(users)
+            if not_found:
+                users += "\n\n ... and {} users I could not find".format(not_found)
+            return list(pagify(users, delims=[" ", "\n"]))
+
+        return []
 
     def _load_cog(self, cogname):
         if not self._does_cogfile_exist(cogname):
@@ -902,11 +1050,43 @@ class Owner:
 
         return fmt.format(d=days, h=hours, m=minutes, s=seconds)
 
+    def save_global_ignores(self):
+        dataIO.save_json("data/red/global_ignores.json", self.global_ignores)
+
+    def save_disabled_commands(self):
+        dataIO.save_json("data/red/disabled_commands.json", self.disabled_commands)
+
+
+def _import_old_data(data):
+    """Migration from mod.py"""
+    try:
+        data["blacklist"] = dataIO.load_json("data/mod/blacklist.json")
+    except FileNotFoundError:
+        pass
+
+    try:
+        data["whitelist"] = dataIO.load_json("data/mod/whitelist.json")
+    except FileNotFoundError:
+        pass
+
+    return data
+
 
 def check_files():
     if not os.path.isfile("data/red/disabled_commands.json"):
         print("Creating empty disabled_commands.json...")
         dataIO.save_json("data/red/disabled_commands.json", [])
+
+    if not os.path.isfile("data/red/global_ignores.json"):
+        print("Creating empty global_ignores.json...")
+        data = {"blacklist": [], "whitelist": []}
+        try:
+            data = _import_old_data(data)
+        except Exception as e:
+            log.error("Failed to migrate blacklist / whitelist data from "
+                      "mod.py: {}".format(e))
+
+        dataIO.save_json("data/red/global_ignores.json", data)
 
 
 def setup(bot):
