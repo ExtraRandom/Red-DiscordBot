@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from helpers import tokens as t, steam_json
+from helpers import tokens as t, steam_json, time_calculations as tc
 
 import aiohttp
 from discord.ext import commands
@@ -470,6 +470,62 @@ class Games:
         else:
             await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
                                "status if issue persists.")
+
+    @commands.command()
+    async def cod(self):
+        """Get time until COD:WW2 reveal"""
+        now = datetime.utcnow()
+        bst = now + timedelta(hours=1)
+        # remove these once certain AWS gives correct times
+        print(now)
+        print(bst)
+
+        bst = datetime(2017, 4, 26, 18, 24, 00, 0)  # testing code works properly
+
+        then = datetime(2017, 4, 26, 18, 00, 00, 0)
+        print(then)
+
+        time_until = then - bst
+
+        # days, hrs, mins = tc.calc_until(then)
+        days, hrs, mins = tc.calc_from_until(bst, then)
+
+        print(days, hrs, mins)
+
+        if days == "0 days":
+            # Less than a day left
+
+            if hrs == "0":
+                # Less than Hour Left
+
+                if mins == "0":
+                    # Trailer is (probably) out
+                    msg = "**Reveal Livestream should be live now.** Check these links:\n" \
+                          "<https://www.callofduty.com/uk/en/wwii>\n" \
+                          "<https://www.youtube.com/user/CALLOFDUTY>\n" \
+                          "<https://www.twitch.tv/callofduty>"
+                else:
+                    msg = "Time until Call of Duty: WW2 Reveal Livestream:\n" \
+                          "**Only** **{}** **minutes**\n\n" \
+                          "Links: \n" \
+                          "<https://www.callofduty.com/uk/en/wwii>\n" \
+                          "<https://www.youtube.com/user/CALLOFDUTY>\n" \
+                          "<https://www.twitch.tv/callofduty>".format(mins)
+            else:
+                msg = "Time until Call of Duty: WW2 Reveal Livestream:\n" \
+                      "     **{}** **hours** and **{}** **minutes**.".format(hrs, mins)
+        else:
+            if "-" in days:
+                msg = "**Reveal Livestream should be live now.** Check these links for the trailer:\n" \
+                      "<https://www.callofduty.com/uk/en/wwii>\n" \
+                      "<https://www.youtube.com/user/CALLOFDUTY>\n" \
+                      "<https://www.twitch.tv/callofduty>"
+            else:
+                msg = "Time until Call of Duty: WW2 Reveal Livestream:\n" \
+                      "     **{}**, **{}** **hours** and **{}** **minutes**" \
+                      "".format(days, hrs, mins)
+
+        await self.bot.say(msg)
 
     @commands.command(hidden=True)
     @checks.is_owner()
