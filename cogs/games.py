@@ -480,7 +480,7 @@ class Games:
         print(now)
         print(bst)
 
-        bst = datetime(2017, 4, 26, 18, 24, 00, 0)  # testing code works properly
+        # bst = datetime(2017, 4, 26, 18, 24, 00, 0)  # testing code works properly
 
         then = datetime(2017, 4, 26, 18, 00, 00, 0)
         print(then)
