@@ -476,21 +476,10 @@ class Games:
         """Get time until COD:WW2 reveal"""
         now = datetime.utcnow()
         bst = now + timedelta(hours=1)
-        # remove these once certain AWS gives correct times
-        print(now)
-        print(bst)
-
-        # bst = datetime(2017, 4, 26, 18, 24, 00, 0)  # testing code works properly
 
         then = datetime(2017, 4, 26, 18, 00, 00, 0)
-        print(then)
-
-        time_until = then - bst
-
         # days, hrs, mins = tc.calc_until(then)
         days, hrs, mins = tc.calc_from_until(bst, then)
-
-        print(days, hrs, mins)
 
         if days == "0 days":
             # Less than a day left
