@@ -7,8 +7,8 @@ from helpers import tokens as t, steam_json, time_calculations as tc
 import aiohttp
 from discord.ext import commands
 import discord
-from cogs.utils import checks
 
+from cogs.utils import checks
 import json
 
 from mcstatus import MinecraftServer
@@ -22,11 +22,10 @@ class Games:
     def __init__(self, bot):
         self.bot = bot
 
-    # TODO remove '§' from text and format the embed better
-
     @commands.command(name="mc")
     async def minecraft_ip(self, ip: str):
         """Get Status of Minecraft Servers"""
+        # TODO remove '§' from text and format the embed better
         try:
             server = MinecraftServer.lookup(ip)
             status = server.status()
@@ -226,6 +225,7 @@ class Games:
 
     @commands.command(pass_context=True)
     async def csgo(self, ctx):
+        """Get CS:GO Stats"""
         user = str(ctx.message.author)
         user_id = steam_json.read(user)
         if user_id == 0:
@@ -470,19 +470,7 @@ class Games:
         else:
             await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
                                "status if issue persists.")
-            
-    @commands.command(hidden=True)
-    @checks.is_owner()
-    async def addsteam(self, user: str, steamid: str):
-        """Owner only command -- WIP"""
-        print(user, " - ", steamid)
-        exists = await steam_json.check_profile(steamid)
-        exists = False # disables command as i need to finish it
-        if exists:
-            write_json = steam_json.write(user, steamid)
-            print(write_json)
-            pass
-    
+
 
 def get_top5(data):
     """Get top 5 stats from given data - should probably rename this somewhen"""

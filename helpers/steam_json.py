@@ -26,7 +26,7 @@ def read(user):
 
 
 def write(user_discord, user_steamid):
-    """CURRENTLY THIS MESSES UP THE FILE WITH /'s N SHIT"""
+    """CURRENTLY THIS MESSES UP THE FILE WITH /'s"""
     with open(id_file) as data_file:
         data = json.load(data_file)
         try:

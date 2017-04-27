@@ -350,3 +350,19 @@ def read_startswith(data, startswith, game):
                       "".format(days, hrs, mins)
 
         await self.bot.say(msg)
+
+
+
+        ##################################################################################################################
+
+        @commands.command(hidden=True)
+        @checks.is_owner()
+        async def addsteam(self, user: str, steamid: str):
+            """Owner only command -- WIP"""
+            print(user, " - ", steamid)
+            exists = await steam_json.check_profile(steamid)
+            exists = False  # disables command as i need to finish it
+            if exists:
+                write_json = steam_json.write(user, steamid)
+                print(write_json)
+                pass
