@@ -84,27 +84,117 @@ class Games:
     @commands.command()
     async def status(self):
         """Get Status of Steam and CS:GO servers"""
-        # TODO add a fallback if something fails
-        login, community, economy = await status_steam()
-        scheduler, servers, players, searching, search_time = await status_csgo()
-
-        embed = discord.Embed(title="Status of Steam", description="Also includes CSGO Status",
-                              url="https://steamstat.us/", colour=discord.Colour.red())
-        embed.add_field(name="Steam", value="Login: {}\n"
-                                            "Community: {}\n"
-                                            "Economy: {}"
-                                            "".format(login, community, economy))
-        embed.add_field(name="CS:GO", value="Scheduler: {}\n"
-                                            "Online Servers: {}\n"
-                                            "Online Players: {} ({} searching)\n"
-                                            "Average Search Time: {} seconds"
-                                            "".format(scheduler.capitalize(), servers, players, searching, search_time))
-        embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
         try:
-            await self.bot.say(embed=embed)
-        except discord.HTTPException:
-            await self.bot.say("I need the `Embed links` permission "
-                               "to send this")
+
+            embed = discord.Embed(title="Status of Steam", description="Also includes TF2, Dota 2 and CSGO Status",
+                                  url="https://steamstat.us/", colour=discord.Colour.red())
+
+            url = 'https://steamgaug.es/api/v2'
+
+            with aiohttp.ClientSession() as session:
+                async with session.get(url)as resp:
+                    data = await resp.json()
+
+                    client = data["ISteamClient"]["online"]
+
+                    community = data["SteamCommunity"]["online"]
+                    community_error = data["SteamCommunity"]["error"]
+
+                    store = data["SteamStore"]["online"]
+                    store_error = data["SteamStore"]["error"]
+
+                    user = data["ISteamUser"]["online"]
+                    user_error = data["ISteamUser"]["error"]
+
+                    items_440 = data["IEconItems"]["440"]["online"]
+                    items_440_error = data["IEconItems"]["440"]["error"]
+
+                    items_570 = data["IEconItems"]["570"]["online"]
+                    items_570_error = data["IEconItems"]["570"]["error"]
+
+                    items_730 = data["IEconItems"]["570"]["online"]
+                    items_730_error = data["IEconItems"]["570"]["error"]
+
+                    games_440 = data["ISteamGameCoordinator"]["440"]["online"]
+                    games_440_error = data["ISteamGameCoordinator"]["440"]["error"]
+
+                    games_570 = data["ISteamGameCoordinator"]["570"]["online"]
+                    games_570_error = data["ISteamGameCoordinator"]["570"]["error"]
+                    games_570_searching = data["ISteamGameCoordinator"]["570"]["stats"]["players_searching"]
+
+                    games_730 = data["ISteamGameCoordinator"]["730"]["online"]
+                    games_730_error = data["ISteamGameCoordinator"]["730"]["error"]
+                    games_730_searching = data["ISteamGameCoordinator"]["730"]["stats"]["players_searching"]
+                    games_730_wait = data["ISteamGameCoordinator"]["730"]["stats"]["average_wait"]
+                    games_730_matches = data["ISteamGameCoordinator"]["730"]["stats"]["ongoing_matches"]
+                    games_730_players = data["ISteamGameCoordinator"]["730"]["stats"]["players_online"]
+
+                    if client == 1: client = "Online"
+                    else: client = "Down"
+
+                    if community == 1: community = "Online"
+                    else: community = "Down"
+
+                    if store == 1: store = "Online"
+                    else: store = "Down"
+
+                    if user == 1: user = "Online"
+                    else: user = "Down"
+
+                    if items_440 == 1: items_440 = "Online"
+                    else: items_440 = "Down"
+
+                    if items_570 == 1: items_570 = "Online"
+                    else: items_570 = "Down"
+
+                    if items_730 == 1: items_730 = "Online"
+                    else: items_730 = "Down"
+
+                    if games_440 == 1: games_440 = "Online"
+                    else: games_440 = "Down"
+
+                    if games_570 == 1: games_570 = "Online"
+                    else: games_570 = "Down"
+
+                    if games_730 == 1: games_730 = "Online"
+                    else: games_730 = "Down"
+
+            embed.add_field(name="Steam", value="Client: {}\n"
+                                                "Community: {}, {}\n"
+                                                "Store: {}, {}\n"
+                                                "User: {}, {}\n".format(client, community, community_error,
+                                                                        store, store_error, user, user_error))
+
+            embed.add_field(name="Team Fortress 2", value="Items: {}, {}\n"
+                                                          "Games: {}, {}".format(items_440, items_440_error, games_440,
+                                                                                 games_440_error))
+
+            embed.add_field(name="Dota 2", value="Items: {}, {}\n"
+                                                 "Games: {}, {}\n"
+                                                 "Players Searching: {}".format(items_570, items_570_error, games_570,
+                                                                                games_570_error, games_570_searching))
+
+            embed.add_field(name="CS:GO", value="Items: {}, {}\n"
+                                                "Games: {}, {}\n"
+                                                "Players Online: {}\n"
+                                                "Players Searching: {}\n"
+                                                "Ongoing Matches: {}\n"
+                                                "Average Wait: {}".format(items_730, items_730_error, games_730,
+                                                                          games_730_error, games_730_players,
+                                                                          games_730_searching, games_730_matches,
+                                                                          games_730_wait))
+
+            embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
+
+            try:
+                await self.bot.say(embed=embed)
+            except discord.HTTPException:
+                await self.bot.say("I need the `Embed links` permission "
+                                   "to send this")
+
+        except Exception as e:
+            await self.bot.say("Error occurred whilst getting Steam Status, try again later")
+            log.warn(e)
 
     @commands.command(pass_context=True)
     async def pd2(self, ctx):
@@ -386,7 +476,7 @@ class Games:
     async def overwatch(self, region: str, battletag: str):
         """Get Overwatch Stats - Regions are 'eu', 'us' and 'kr'"""
 
-        # TODO update to use https://github.com/SunDwarf/OWAPI/blob/master/api.md
+        # Updated to use https://github.com/SunDwarf/OWAPI/blob/master/api.md
         # https://owapi.net/api/v3/u/ExtraRandom-2501/blob?format=json_pretty
 
         msg = await self.bot.say("Fetching Stats for {}".format(battletag))
@@ -471,62 +561,15 @@ class Games:
             await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
                                "status if issue persists.")
 
+    # TODO use twitter api to get info from PUBG twitter
+
 
 def get_top5(data):
-    """Get top 5 stats from given data - should probably rename this somewhen"""
+    """Get top 5 stats from given data"""
     gdata = data
     result = sorted(range(len(gdata)), key=lambda i: gdata[i], reverse=True)
 
     return result
-
-async def status_steam():
-    url = 'http://is.steam.rip/api/v1/?request=SteamStatus'
-    try:
-        with aiohttp.ClientSession() as session:
-            async with session.get(url)as resp:
-                data = await resp.json()
-                if str(data["result"]["success"]) == "True":
-                    login = (data["result"]["SteamStatus"]["services"]["SessionsLogon"]).capitalize()
-                    community = (data["result"]["SteamStatus"]["services"]["SteamCommunity"]).capitalize()
-                    economy = (data["result"]["SteamStatus"]["services"]["IEconItems"]).capitalize()
-                else:
-                    login = "N/A"
-                    community = "N/A"
-                    economy = "N/A"
-    except Exception as e:
-        login = "Error"
-        community = "Error"
-        economy = "Error"
-        log.info("Error getting steam status: {}".format(e))
-    return login, community, economy
-
-
-async def status_csgo():
-
-    scheduler = "N/A"
-    servers = "N/A"
-    players = "N/A"
-    searching = "N/A"
-    search_time = "N/A"
-
-    if not t.web_api == "":
-        try:
-            link = "https://api.steampowered.com/ICSGOServers_730/GetGameServersStatus/v1/?key={}&format=json" \
-                   "".format(t.web_api)
-
-            with aiohttp.ClientSession() as session:
-                async with session.get(link)as resp:
-                    data = await resp.json()
-
-                    scheduler = data['result']['matchmaking']['scheduler']
-                    servers = data['result']['matchmaking']['online_servers']
-                    players = data['result']['matchmaking']['online_players']
-                    searching = data['result']['matchmaking']['searching_players']
-                    search_time = data['result']['matchmaking']['search_seconds_avg']
-        except Exception as e:
-            print("Error: {}".format(e))
-
-    return scheduler, servers, players, searching, search_time
 
 
 def setup(bot):

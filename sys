@@ -1,9 +1,9 @@
 #!/bin/bash
-# Version 0.3
+# Version 0.4
 
 DIR="Red-DiscordBot"
 BOT="red.py"
-HELP="Args: git, bot, kill"
+HELP="Args: git, bot, kill, yt (updates yt-dl)"
 
 if [ -z "$*" ]; then
 	echo $HELP
@@ -19,6 +19,8 @@ else
 		cd ..
     elif [ "$1" = "kill" ]; then
         pkill -f red.py
+	elif [ "$1" = "yt" ]; then
+		sudo -H pip install --upgrade youtube-dl
     else
         echo $HELP
     fi

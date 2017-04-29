@@ -366,3 +366,56 @@ def read_startswith(data, startswith, game):
                 write_json = steam_json.write(user, steamid)
                 print(write_json)
                 pass
+
+
+
+            ####################################################
+
+
+            async def status_steam():
+                url = 'http://is.steam.rip/api/v1/?request=SteamStatus'
+                try:
+                    with aiohttp.ClientSession() as session:
+                        async with session.get(url)as resp:
+                            data = await resp.json()
+                            if str(data["result"]["success"]) == "True":
+                                login = (data["result"]["SteamStatus"]["services"]["SessionsLogon"]).capitalize()
+                                community = (data["result"]["SteamStatus"]["services"]["SteamCommunity"]).capitalize()
+                                economy = (data["result"]["SteamStatus"]["services"]["IEconItems"]).capitalize()
+                            else:
+                                login = "N/A"
+                                community = "N/A"
+                                economy = "N/A"
+                except Exception as e:
+                    login = "Error"
+                    community = "Error"
+                    economy = "Error"
+                    log.info("Error getting steam status: {}".format(e))
+                return login, community, economy
+
+            async def status_csgo():
+
+                scheduler = "N/A"
+                servers = "N/A"
+                players = "N/A"
+                searching = "N/A"
+                search_time = "N/A"
+
+                if not t.web_api == "":
+                    try:
+                        link = "https://api.steampowered.com/ICSGOServers_730/GetGameServersStatus/v1/?key={}&format=json" \
+                               "".format(t.web_api)
+
+                        with aiohttp.ClientSession() as session:
+                            async with session.get(link)as resp:
+                                data = await resp.json()
+
+                                scheduler = data['result']['matchmaking']['scheduler']
+                                servers = data['result']['matchmaking']['online_servers']
+                                players = data['result']['matchmaking']['online_players']
+                                searching = data['result']['matchmaking']['searching_players']
+                                search_time = data['result']['matchmaking']['search_seconds_avg']
+                    except Exception as e:
+                        print("Error: {}".format(e))
+
+                return scheduler, servers, players, searching, search_time
