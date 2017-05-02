@@ -19,10 +19,10 @@ else
         python3 $BOT &
 		cd ..
 	elif [ "$1" = "abot" ]; then
-
         cd $DIR
         python3 $BOT &
-		while true; do
+		while true
+		do
 			if ps -p $! > /dev/null; then
 				echo "Bot is still running"
 			else
@@ -30,7 +30,6 @@ else
 				python3 $BOT &
 			fi
 		cd ..
-
     elif [ "$1" = "kill" ]; then
         pkill -f red.py
 	elif [ "$1" = "yt" ]; then
