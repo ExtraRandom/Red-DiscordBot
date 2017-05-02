@@ -3,6 +3,7 @@
 
 DIR="Red-DiscordBot"
 BOT="red.py"
+LOG="/home/ubuntu/botcrashtimes.log"
 HELP="Args: git, bot, kill, yt (updates yt-dl)"
 
 if [ -z "$*" ]; then
@@ -17,6 +18,19 @@ else
         cd $DIR
         python3 $BOT &
 		cd ..
+	elif [ "$1" = "abot" ]; then
+
+        cd $DIR
+        python3 $BOT &
+		while true; do
+			if ps -p $! > /dev/null; then
+				echo "Bot is still running"
+			else
+				echo "$(date) $line" > $LOG
+				python3 $BOT &
+			fi
+		cd ..
+
     elif [ "$1" = "kill" ]; then
         pkill -f red.py
 	elif [ "$1" = "yt" ]; then
