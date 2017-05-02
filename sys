@@ -23,7 +23,7 @@ else
         python3 $BOT &
 		while true;	do
 			if ps -p $! > /dev/null; then
-				echo "Bot is still running"
+				sleep 60
 			else
 				echo "$(date) $line" > $LOG
 				python3 $BOT &
