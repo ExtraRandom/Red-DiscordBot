@@ -21,14 +21,14 @@ else
 	elif [ "$1" = "abot" ]; then
         cd $DIR
         python3 $BOT &
-		while true
-		do
+		while true;	do
 			if ps -p $! > /dev/null; then
 				echo "Bot is still running"
 			else
 				echo "$(date) $line" > $LOG
 				python3 $BOT &
 			fi
+		done
 		cd ..
     elif [ "$1" = "kill" ]; then
         pkill -f red.py
