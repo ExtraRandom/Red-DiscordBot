@@ -38,6 +38,14 @@ def get_date_suf(day):
     return suffix
 
 
+def remove_zero_pad(val):
+    if str(val).startswith("0"):
+        val = str(val).replace("0", "")
+    else:
+        return int(val)
+    return int(val)
+
+
 def date_split(date):
     """
     Returns the given datetime as three strings: year, month and day
@@ -129,7 +137,6 @@ def calc_from_until(dFrom, rd):
     hrs = hrs.strip()  # removes spaces in string
 
     return days, hrs, minutes
-
 
 
 def calc_duration(start):

@@ -8,8 +8,8 @@ import aiohttp
 from discord.ext import commands
 import discord
 
-from cogs.utils import checks
-import json
+# from cogs.utils import checks
+# import json
 
 from mcstatus import MinecraftServer
 
@@ -21,6 +21,66 @@ log = logging.getLogger(__name__)
 class Games:
     def __init__(self, bot):
         self.bot = bot
+
+        self.e3_img = "https://pbs.twimg.com/media/C__N0JJUwAAssSd.jpg"
+
+        self.ea_e3   = datetime(2017, 6, 10, 20, 00, 00, 0)
+        self.ms_e3   = datetime(2017, 6, 11, 22, 00, 00, 0)
+        self.beth_e3 = datetime(2017, 6, 12,  3, 00, 00, 0)
+        self.pcg_e3  = datetime(2017, 6, 12, 18, 00, 00, 0)
+        self.ubi_e3  = datetime(2017, 6, 12, 21, 00, 00, 0)
+        self.sony_e3 = datetime(2017, 6, 13,  2, 00, 00, 0)
+        self.nint_e3 = datetime(2017, 6, 13, 17, 00, 00, 0)
+
+        self.datefmt = "%I:%p:%B:%d"
+
+
+    @commands.command()
+    async def e3(self):
+        """Temporary E3 Command"""
+        now = str(datetime.now()).split(".")[0]
+
+        embed = discord.Embed(title="E3 Times",
+                              colour=discord.Colour.red())
+
+        ea = self.ea_e3.strftime(self.datefmt).split(":")
+        embed.add_field(name="EA", value="{}{} on {} {}{}".format(tc.remove_zero_pad(ea[0]),
+                                                                  ea[1], ea[2], ea[3],
+                                                                  tc.get_date_suf(ea[3])))
+
+        ms = self.ms_e3.strftime(self.datefmt).split(":")
+        embed.add_field(name="Microsoft", value="{}{} on {} {}{}".format(tc.remove_zero_pad(ms[0]),
+                                                                  ms[1], ms[2], ms[3],
+                                                                  tc.get_date_suf(ms[3])))
+
+        beth = self.beth_e3.strftime(self.datefmt).split(":")
+        embed.add_field(name="Bethesda", value="{}{} on {} {}{}".format(tc.remove_zero_pad(beth[0]),
+                                                                        beth[1], beth[2], beth[3],
+                                                                        tc.get_date_suf(beth[3])))
+
+        pcg = self.pcg_e3.strftime(self.datefmt).split(":")
+        embed.add_field(name="PC Gaming Show", value="{}{} on {} {}{}".format(tc.remove_zero_pad(pcg[0]),
+                                                                        pcg[1], pcg[2], pcg[3],
+                                                                        tc.get_date_suf(pcg[3])))
+
+        ubi = self.ubi_e3.strftime(self.datefmt).split(":")
+        embed.add_field(name="Ubisoft", value="{}{} on {} {}{}".format(tc.remove_zero_pad(ubi[0]),
+                                                                       ubi[1], ubi[2], ubi[3],
+                                                                       tc.get_date_suf(ubi[3])))
+
+        sony = self.sony_e3.strftime(self.datefmt).split(":")
+        embed.add_field(name="Sony", value="{}{} on {} {}{}".format(tc.remove_zero_pad(sony[0]),
+                                                                    sony[1], sony[2], sony[3],
+                                                                    tc.get_date_suf(sony[3])))
+
+        nint = self.nint_e3.strftime(self.datefmt).split(":")
+        embed.add_field(name="Nintendo", value="{}{} on {} {}{}".format(tc.remove_zero_pad(nint[0]),
+                                                                        nint[1], nint[2], nint[3],
+                                                                        tc.get_date_suf(nint[3])))
+
+        embed.set_footer(text="Now: {}".format(now))
+        embed.set_thumbnail(url="https://www.neoogilvy.com/wp-content/uploads/2012/07/E3-logo.png")
+        await self.bot.say(embed=embed)
 
     @commands.command(name="mc")
     async def minecraft_ip(self, ip: str):

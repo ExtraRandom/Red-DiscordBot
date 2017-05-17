@@ -3,7 +3,6 @@
 
 DIR="Red-DiscordBot"
 BOT="red.py"
-LOG="/home/ubuntu/botcrashtimes.log"
 HELP="Args: git, bot, kill, yt (updates yt-dl)"
 
 if [ -z "$*" ]; then
@@ -15,20 +14,8 @@ else
         cd ..
 		echo "Run ./run to update 'sys's"
     elif [ "$1" = "bot" ]; then
-        cd $DIR
+		cd $DIR
         python3 $BOT &
-		cd ..
-	elif [ "$1" = "abot" ]; then
-        cd $DIR
-        python3 $BOT &
-		while true;	do
-			if ps -p $! > /dev/null; then
-				sleep 60
-			else
-				echo "$(date) $line" > $LOG
-				python3 $BOT &
-			fi
-		done
 		cd ..
     elif [ "$1" = "kill" ]; then
         pkill -f red.py
