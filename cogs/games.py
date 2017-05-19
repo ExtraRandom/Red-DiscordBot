@@ -34,7 +34,6 @@ class Games:
 
         self.datefmt = "%I:%p:%B:%d"
 
-
     @commands.command()
     async def e3(self):
         """Temporary E3 Command"""
@@ -175,19 +174,23 @@ class Games:
                     items_730 = data["IEconItems"]["570"]["online"]
                     items_730_error = data["IEconItems"]["570"]["error"]
 
+
+
                     games_440 = data["ISteamGameCoordinator"]["440"]["online"]
                     games_440_error = data["ISteamGameCoordinator"]["440"]["error"]
-
                     games_570 = data["ISteamGameCoordinator"]["570"]["online"]
                     games_570_error = data["ISteamGameCoordinator"]["570"]["error"]
                     games_570_searching = data["ISteamGameCoordinator"]["570"]["stats"]["players_searching"]
-
                     games_730 = data["ISteamGameCoordinator"]["730"]["online"]
                     games_730_error = data["ISteamGameCoordinator"]["730"]["error"]
-                    games_730_searching = data["ISteamGameCoordinator"]["730"]["stats"]["players_searching"]
-                    games_730_wait = data["ISteamGameCoordinator"]["730"]["stats"]["average_wait"]
-                    games_730_matches = data["ISteamGameCoordinator"]["730"]["stats"]["ongoing_matches"]
-                    games_730_players = data["ISteamGameCoordinator"]["730"]["stats"]["players_online"]
+
+                    try:
+                        games_730_searching = data["ISteamGameCoordinator"]["730"]["stats"]["players_searching"]
+                        games_730_wait = data["ISteamGameCoordinator"]["730"]["stats"]["average_wait"]
+                        games_730_matches = data["ISteamGameCoordinator"]["730"]["stats"]["ongoing_matches"]
+                        games_730_players = data["ISteamGameCoordinator"]["730"]["stats"]["players_online"]
+                    except Exception as e:
+                        pass
 
                     if client == 1: client = "Online"
                     else: client = "Down"
@@ -219,42 +222,48 @@ class Games:
                     if games_730 == 1: games_730 = "Online"
                     else: games_730 = "Down"
 
-            embed.add_field(name="Steam", value="Client: {}\n"
+                    embed.add_field(name="Steam", value="Client: {}\n"
                                                 "Community: {}, {}\n"
                                                 "Store: {}, {}\n"
                                                 "User: {}, {}\n".format(client, community, community_error,
                                                                         store, store_error, user, user_error))
 
-            embed.add_field(name="Team Fortress 2", value="Items: {}, {}\n"
-                                                          "Games: {}, {}".format(items_440, items_440_error, games_440,
-                                                                                 games_440_error))
+                    embed.add_field(name="Team Fortress 2", value="Items: {}, {}\n"
+                                                              "Games: {}, {}".format(items_440, items_440_error, games_440,
+                                                                                     games_440_error))
 
-            embed.add_field(name="Dota 2", value="Items: {}, {}\n"
-                                                 "Games: {}, {}\n"
-                                                 "Players Searching: {}".format(items_570, items_570_error, games_570,
-                                                                                games_570_error, games_570_searching))
+                    embed.add_field(name="Dota 2", value="Items: {}, {}\n"
+                                                     "Games: {}, {}\n"
+                                                     "Players Searching: {}".format(items_570, items_570_error, games_570,
+                                                                                    games_570_error, games_570_searching))
+                    try:
+                        embed.add_field(name="CS:GO", value="Items: {}, {}\n"
+                                                        "Games: {}, {}\n"
+                                                        "Players Online: {}\n"
+                                                        "Players Searching: {}\n"
+                                                        "Ongoing Matches: {}\n"
+                                                        "Average Wait: {}".format(items_730, items_730_error, games_730,
+                                                                                  games_730_error, games_730_players,
+                                                                                  games_730_searching, games_730_matches,
+                                                                                  games_730_wait))
+                    except Exception as e:
+                        embed.add_field(name="CS:GO", value="Items: {}, {}\n"
+                                                        "Games: {}, {}\n"
+                                                    "".format(items_730, items_730_error, games_730,
+                                                                              games_730_error,))
 
-            embed.add_field(name="CS:GO", value="Items: {}, {}\n"
-                                                "Games: {}, {}\n"
-                                                "Players Online: {}\n"
-                                                "Players Searching: {}\n"
-                                                "Ongoing Matches: {}\n"
-                                                "Average Wait: {}".format(items_730, items_730_error, games_730,
-                                                                          games_730_error, games_730_players,
-                                                                          games_730_searching, games_730_matches,
-                                                                          games_730_wait))
+                    embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
-            embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
+                    try:
+                        await self.bot.say(embed=embed)
+                    except discord.HTTPException as e:
+                        await self.bot.say("I need the `Embed links` permission to send this")
 
-            try:
-                await self.bot.say(embed=embed)
-            except discord.HTTPException:
-                await self.bot.say("I need the `Embed links` permission "
-                                   "to send this")
 
         except Exception as e:
-            await self.bot.say("Error occurred whilst getting Steam Status, try again later")
+            await self.bot.say("Error occurred whilst getting Steam Status, try again in a few minutes.")
             log.warn(e)
+            print(e)
 
     @commands.command(pass_context=True)
     async def pd2(self, ctx):
