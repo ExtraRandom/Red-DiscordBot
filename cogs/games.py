@@ -174,8 +174,6 @@ class Games:
                     items_730 = data["IEconItems"]["570"]["online"]
                     items_730_error = data["IEconItems"]["570"]["error"]
 
-
-
                     games_440 = data["ISteamGameCoordinator"]["440"]["online"]
                     games_440_error = data["ISteamGameCoordinator"]["440"]["error"]
                     games_570 = data["ISteamGameCoordinator"]["570"]["online"]
@@ -223,34 +221,37 @@ class Games:
                     else: games_730 = "Down"
 
                     embed.add_field(name="Steam", value="Client: {}\n"
-                                                "Community: {}, {}\n"
-                                                "Store: {}, {}\n"
-                                                "User: {}, {}\n".format(client, community, community_error,
-                                                                        store, store_error, user, user_error))
+                                                        "Community: {}, {}\n"
+                                                        "Store: {}, {}\n"
+                                                        "User: {}, {}\n".format(client, community, community_error,
+                                                                                store, store_error, user, user_error))
 
                     embed.add_field(name="Team Fortress 2", value="Items: {}, {}\n"
-                                                              "Games: {}, {}".format(items_440, items_440_error, games_440,
-                                                                                     games_440_error))
+                                                                  "Games: {}, {}".format(items_440, items_440_error,
+                                                                                         games_440, games_440_error))
 
                     embed.add_field(name="Dota 2", value="Items: {}, {}\n"
-                                                     "Games: {}, {}\n"
-                                                     "Players Searching: {}".format(items_570, items_570_error, games_570,
-                                                                                    games_570_error, games_570_searching))
+                                                         "Games: {}, {}\n"
+                                                         "Players Searching: {}".format(items_570, items_570_error,
+                                                                                        games_570, games_570_error,
+                                                                                        games_570_searching))
                     try:
                         embed.add_field(name="CS:GO", value="Items: {}, {}\n"
-                                                        "Games: {}, {}\n"
-                                                        "Players Online: {}\n"
-                                                        "Players Searching: {}\n"
-                                                        "Ongoing Matches: {}\n"
-                                                        "Average Wait: {}".format(items_730, items_730_error, games_730,
-                                                                                  games_730_error, games_730_players,
-                                                                                  games_730_searching, games_730_matches,
-                                                                                  games_730_wait))
+                                                            "Games: {}, {}\n"
+                                                            "Players Online: {}\n"
+                                                            "Players Searching: {}\n"
+                                                            "Ongoing Matches: {}\n"
+                                                            "Average Wait: {}".format(items_730, items_730_error,
+                                                                                      games_730, games_730_error,
+                                                                                      games_730_players,
+                                                                                      games_730_searching,
+                                                                                      games_730_matches,
+                                                                                      games_730_wait))
                     except Exception as e:
                         embed.add_field(name="CS:GO", value="Items: {}, {}\n"
-                                                        "Games: {}, {}\n"
-                                                    "".format(items_730, items_730_error, games_730,
-                                                                              games_730_error,))
+                                                            "Games: {}, {}\n"
+                                                            "".format(items_730, items_730_error, games_730,
+                                                                      games_730_error))
 
                     embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
@@ -258,7 +259,6 @@ class Games:
                         await self.bot.say(embed=embed)
                     except discord.HTTPException as e:
                         await self.bot.say("I need the `Embed links` permission to send this")
-
 
         except Exception as e:
             await self.bot.say("Error occurred whilst getting Steam Status, try again in a few minutes.")
