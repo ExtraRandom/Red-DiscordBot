@@ -163,6 +163,7 @@
     },
     "#Sources+Comments":[
         "https://steamdb.info/app/218620/stats/", "Steam WebAPI",
-        "http://wiki.modworkshop.net/Payday_2/Weapon_IDs", "http://wiki.modworkshop.net/Payday_2/Mask_IDs"
+        "http://wiki.modworkshop.net/Payday_2/Weapon_IDs", "http://wiki.modworkshop.net/Payday_2/Mask_IDs",
+        "Needs Updating"
     ]
 }
