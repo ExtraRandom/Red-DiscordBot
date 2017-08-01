@@ -241,8 +241,6 @@ class Games:
                     async with session.get(link)as resp:
                         data = await resp.text()  # resp.json()
 
-                        # TODO add possible error catching
-
                         heist_s = steam_json.steam_read(data, "heist_success")
                         heist_f = steam_json.steam_read(data, "heist_failed")
 
@@ -427,7 +425,7 @@ class Games:
             return
 
         if not t.web_api == "":
-            #try:
+            # try:
                 link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=304930&key={}" \
                        "&steamid={}&format=json" \
                        "".format(t.web_api, user_id)
@@ -479,8 +477,8 @@ class Games:
                             await self.bot.say("I need the `Embed links` permission "
                                                "to send this")
 
-            #except Exception as e:
-                #print("oh no")
+            # except Exception as e:
+                # print("oh no")
 
     @commands.command()
     async def overwatch(self, region: str, battletag: str):
@@ -517,17 +515,18 @@ class Games:
                 async with session.get(link)as resp:
                     data = await resp.json()
 
-                    stats = data['eu']['stats']['quickplay']
+                    stats = data[reg]['stats']['quickplay']
 
                     time_played = stats['game_stats']['time_played']
                     level = stats['overall_stats']['level']
                     wins = stats['overall_stats']['wins']
                     avatar = stats['overall_stats']['avatar']
 
-                    death_avg = stats['average_stats']['deaths_avg']
-                    elims_avg = stats['average_stats']['eliminations_avg']
-                    heals_avg = stats['average_stats']['healing_done_avg']
-                    objks_avg = stats['average_stats']['objective_kills_avg']
+                    # used to be ['average_stats']
+                    death_avg = int(stats['game_stats']['deaths'])  #_avg']
+                    elims_avg = int(stats['game_stats']['eliminations'])  #_avg']
+                    heals_avg = int(stats['game_stats']['healing_done'])  #_avg']
+                    objks_avg = int(stats['game_stats']['objective_kills'])  #_avg']
 
                     md_total = int(stats['game_stats']['medals'])
                     md_gold = int(stats['game_stats']['medals_gold'])
@@ -543,7 +542,7 @@ class Games:
                                                           "Wins: {}"
                                                           "".format(time_played, level, wins))
 
-                    embed.add_field(name="Average", value="Eliminations: {}\n"
+                    embed.add_field(name="Totals", value="Eliminations: {}\n"
                                                           "Deaths: {}\n"
                                                           "Healing Done: {}\n"
                                                           "Objective Kills: {}"
@@ -571,7 +570,7 @@ class Games:
             await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
                                "status if issue persists.")
 
-    # TODO use twitter api to get info from PUBG twitter
+# TODO use twitter api to get info from PUBG twitter
 
 
 def get_top5(data):
