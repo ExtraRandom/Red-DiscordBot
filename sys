@@ -17,7 +17,7 @@ else
 		cd $DIR
         python3 $BOT &
 		cd ..
-	elif [ "$1" = "bottest"]; then
+	elif [ "$1" = "bottest" ]; then
 		echo "Running bot test method" 	
 		cd $DIR
 		nohup monitor.bash &
