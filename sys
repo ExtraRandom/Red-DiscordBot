@@ -5,8 +5,6 @@ DIR="Red-DiscordBot"
 BOT="red.py"
 HELP="Args: git, bot, kill, yt (updates yt-dl)"
 
-THING="/monitor.bash"
-TEST=$DIR$THING
 
 if [ -z "$*" ]; then
 	echo $HELP
@@ -23,8 +21,7 @@ else
 	elif [ "$1" = "bottest" ]; then
 		echo "Running bot test method" 	
 		cd $DIR
-		#nohup monitor.bash &
-		nohup $TEST &
+		nohup ./monitor.bash &
 		cd ..
     elif [ "$1" = "kill" ]; then
         pkill -f red.py
