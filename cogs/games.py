@@ -9,10 +9,11 @@ from discord.ext import commands
 import discord
 
 # from cogs.utils import checks
-# import json
 
 from mcstatus import MinecraftServer
 
+# import requests
+# import json
 
 loop = asyncio.get_event_loop()
 log = logging.getLogger(__name__)
@@ -569,8 +570,6 @@ class Games:
         else:
             await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
                                "status if issue persists.")
-
-# TODO use twitter api to get info from PUBG twitter
 
 
 def get_top5(data):

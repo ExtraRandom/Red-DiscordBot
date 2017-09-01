@@ -17,6 +17,11 @@ else
 		cd $DIR
         python3 $BOT &
 		cd ..
+	elif [ "$1" = "bottest"]; then
+		echo "Running bot test method" 	
+		cd $DIR
+		nohup monitor.bash &
+		cd ..
     elif [ "$1" = "kill" ]; then
         pkill -f red.py
 	elif [ "$1" = "yt" ]; then
