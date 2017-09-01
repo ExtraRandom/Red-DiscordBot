@@ -5,7 +5,7 @@ DIR="Red-DiscordBot"
 BOT="red.py"
 HELP="Args: git, bot, kill, yt (updates yt-dl)"
 
-THING="monitor.bash"
+THING="/monitor.bash"
 TEST=$DIR$THING
 
 if [ -z "$*" ]; then
