@@ -27,9 +27,9 @@ else
 		pkill -f -e monitor.bash
 		pkill -f -e red.py
 	elif [ "$1" = "gp" ]; then
-		chmod 777 /Red-DiscordBot/monitor.bash
+		chmod 777 ./Red-DiscordBot/monitor.bash
 	elif [ "$1" = "tp" ]; then
-		chmod 644 /Red-DiscordBot/monitor.bash
+		chmod 644 ./Red-DiscordBot/monitor.bash
     elif [ "$1" = "kill" ]; then
         pkill -f -e red.py
 	elif [ "$1" = "yt" ]; then
