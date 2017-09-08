@@ -1,19 +1,15 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime  # , timedelta
 
-from helpers import tokens as t, steam_json, time_calculations as tc
+from helpers import tokens as t, steam_json  # , time_calculations as tc
 
 import aiohttp
 from discord.ext import commands
 import discord
 
-# from cogs.utils import checks
-
 from mcstatus import MinecraftServer
 
-# import requests
-# import json
 
 loop = asyncio.get_event_loop()
 log = logging.getLogger(__name__)
@@ -123,6 +119,25 @@ class Games:
                     games_570_searching = data["ISteamGameCoordinator"]["570"]["stats"]["players_searching"]
                     games_730 = data["ISteamGameCoordinator"]["730"]["online"]
                     games_730_error = data["ISteamGameCoordinator"]["730"]["error"]
+
+                    # TODO change this so it's if statements instead of this mess
+
+                    try:
+                        games_440_error_code = data["ISteamGameCoordinator"]["440"]["error"]["code"]
+                        # games_440_error_connect = data["ISteamGameCoordinator"]["440"]["error"]["connect"]
+                        games_440_error = "Error: {}".format(games_440_error_code)
+
+                        games_570_error_code = data["ISteamGameCoordinator"]["570"]["error"]["code"]
+                        # games_570_error_connect = data["ISteamGameCoordinator"]["570"]["error"]["connect"]
+                        games_570_error = "Error: {}".format(games_570_error_code)
+
+                        games_730_error_code = data["ISteamGameCoordinator"]["730"]["error"]["code"]
+                        # games_730_error_connect = data["ISteamGameCoordinator"]["730"]["error"]["connect"]
+                        games_730_error = "Error: {}".format(games_730_error_code)
+
+                    except Exception as e:
+                        pass
+
 
                     try:
                         games_730_searching = data["ISteamGameCoordinator"]["730"]["stats"]["players_searching"]

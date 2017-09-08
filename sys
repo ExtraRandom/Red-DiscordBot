@@ -1,10 +1,10 @@
 #!/bin/bash
-# Version 0.5
+# Version 0.6
 
 DIR="Red-DiscordBot"
 BOT="red.py"
 HELP="Args: git, bot, kill, yt"
-HELP2="Legacy Commands: bot_old, kill_old"
+HELP2="Legacy Args: bot_old, kill_old"
 # gp and tp commands only need to be used if monitor.bash is updated
 
 if [ -z "$*" ]; then
@@ -15,9 +15,9 @@ else
         cd $DIR
         git pull
         cd ..
-		echo "Run ./run to update 'sys's"
+		echo "Run ./run to update 'sys' file"
 	elif [ "$1" = "bot" ]; then
-		echo "Running bot test method" 	
+		echo "Running Bot - Will keep alive" 	
 		cd $DIR
 		nohup ./monitor.bash &
 		cd ..
