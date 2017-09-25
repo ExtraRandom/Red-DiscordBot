@@ -10,6 +10,8 @@ import discord
 
 from mcstatus import MinecraftServer
 
+import requests
+import json
 
 loop = asyncio.get_event_loop()
 log = logging.getLogger(__name__)
@@ -533,7 +535,7 @@ class Games:
 
                     stats = data[reg]['stats']['quickplay']
 
-                    time_played = stats['game_stats']['time_played']
+                    time_played = int(stats['game_stats']['time_played'])
                     level = stats['overall_stats']['level']
                     wins = stats['overall_stats']['wins']
                     avatar = stats['overall_stats']['avatar']
@@ -550,7 +552,8 @@ class Games:
                     md_bronze = int(stats['game_stats']['medals_bronze'])
 
                     embed = discord.Embed(title="Overwatch Stats for {}".format(battletag),
-                                          colour=discord.Colour.orange())
+                                          colour=discord.Colour.orange(),
+                                          description="Quickplay Stats")
                     embed.set_thumbnail(url=avatar)
 
                     embed.add_field(name="General", value="Time Played: {}\n"
@@ -585,6 +588,176 @@ class Games:
         else:
             await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
                                "status if issue persists.")
+
+    @commands.command()
+    async def pubg(self, bg_name: str, region="eu"):
+        """Get PUBG Stats (Use in-game name)
+
+        Region is Optional Argument, Defaults to EU
+
+        Regions: AS, NA, SEA, EU, OC, SA, All
+        """
+
+        msg = await self.bot.say("Fetching PUBG Stats for {}".format(bg_name))
+
+        region = region.lower()
+
+        key = t.pubg_api
+        url_base = "https://pubgtracker.com/api/profile/pc/"
+        url = "{}{}".format(url_base, bg_name)
+        headers = {
+            'content-type': "application/json",
+            'trn-api-key': key,
+        }
+
+        response = requests.request("GET", url, headers=headers)
+
+        data = json.loads(response.text)  # print(data)
+
+        working = True
+
+        try:
+            if data['message']:
+                working = False
+        except KeyError:
+            pass
+
+        if working:
+            season = data['seasonDisplay']
+            avatar = data['Avatar']
+            properName = data['PlayerName']
+            update_time = str(data['LastUpdated'])
+            last_updated = update_time.split(".")[0].replace("T", " ")
+            site_link = "https://pubgtracker.com/profile/pc/{}?region={}".format(properName, region)
+
+            solo_n = pubg_find("solo", region, data)
+            duo_n = pubg_find("duo", region, data)
+            squad_n = pubg_find("squad", region, data)
+
+            embed = discord.Embed(title="{} PUBG Stats for {}".format(region.upper(), properName),
+                                  description=season,
+                                  colour=discord.Colour.gold(),
+                                  url=site_link)
+
+            if solo_n is not None:
+                solo_data = pubg_filter(data, solo_n)
+                embed.add_field(name="Solo",
+                                value="Kill Death Ratio: {}\n"
+                                      "Kills: {}\n"
+                                      "Played: {}\n"
+                                      "Wins: {}\n"
+                                      "Rank: {}\n"
+                                      "Rank %: Top {}%\n"
+                                      "Top 10's: {}"
+                                      "".format(solo_data[0], solo_data[1], solo_data[2], solo_data[3], solo_data[4],
+                                                solo_data[5], solo_data[6]))
+            else:
+                embed.add_field(name="Solo", value="No Data for Solo Matches")
+
+            if duo_n is not None:
+                duo_data = pubg_filter(data, duo_n)
+                embed.add_field(name="Duo",
+                                value="Kill Death Ratio: {}\n"
+                                      "Kills: {}\n"
+                                      "Played: {}\n"
+                                      "Wins: {}\n"
+                                      "Rank: {}\n"
+                                      "Rank %: Top {}%\n"
+                                      "Top 10's: {}"
+                                      "".format(duo_data[0], duo_data[1], duo_data[2], duo_data[3], duo_data[4],
+                                                duo_data[5], duo_data[6]))
+            else:
+                embed.add_field(name="Duo", value="No Data for Duo Matches")
+
+            if squad_n is not None:
+                squad_data = pubg_filter(data, squad_n)
+
+                embed.add_field(name="Squad",
+                                value="Kill Death Ratio: {}\n"
+                                      "Kills: {}\n"
+                                      "Played: {}\n"
+                                      "Wins: {}\n"
+                                      "Rank: {}\n"
+                                      "Rank %: Top {}%\n"
+                                      "Top 10's: {}"
+                                      "".format(squad_data[0], squad_data[1], squad_data[2], squad_data[3],
+                                                squad_data[4], squad_data[5], squad_data[6]))
+            else:
+                embed.add_field(name="Squad", value="No Data for Squad Matches")
+
+            embed.set_thumbnail(url=avatar)
+            embed.set_footer(text="Stats Last Updated: {}".format(last_updated))
+
+            await self.bot.delete_message(msg)
+            await self.bot.say(embed=embed)
+
+        else:  # if not working
+            await self.bot.edit_message(msg, "Error Occurred")
+
+
+def pubg_filter(data, number):
+    """
+    All Stats: KillDeathRatio, WinRatio, TimeSurvived, RoundsPlayed, Wins, WinTop10Ratio, Top10s, Top10Ratio,
+    Losses, Rating, BestRating, BestRank, DamagePg, HeadshotKillsPg, HealsPg, KillsPg, MoveDistancePg, RevivesPg,
+    RoadKillsPg, TeamKillsPg, TimeSurvivedPg, Top10sPg, Kills, Assists, Suicides, TeamKills, HeadshotKills,
+    HeadshotKillRatio, VehicleDestroys, RoadKills, DailyKills, WeeklyKills, RoundMostKills, MaxKillStreaks,
+    WeaponsAcquired, Days, LongestTimeSurvived, MostSurvivalTime, AvgSurvivalTime, WinPoints, WalkDistance,
+    RideDistance, MoveDistance, AvgWalkDistance, AvgRideDistance, LongestKill, Heals, Revives, Boosts, DamageDealt,
+    DBNOs,
+    """
+    s_filter = ["KillDeathRatio", "Wins", "RoundsPlayed", "Kills", "Rating", "Top10s"]
+    # results = []
+
+    KDR = None
+    Kills = None
+    Rounds = None
+    Wins = None
+    Rating = None
+    RatingPercent = None
+    Top10s = None
+
+    loops = len(data['Stats'][number]['Stats'])
+
+    for i in range(0, loops - 1):
+        item = str(data['Stats'][number]['Stats'][i]['field'])
+        if item in s_filter:
+            if item == "KillDeathRatio":
+                KDR = data['Stats'][number]['Stats'][i]['value']
+            elif item == "Wins":
+                Wins = data['Stats'][number]['Stats'][i]['value']
+            elif item == "RoundsPlayed":
+                Rounds = data['Stats'][number]['Stats'][i]['value']
+            elif item == "Kills":
+                Kills = data['Stats'][number]['Stats'][i]['value']
+            elif item == "Top10s":
+                Top10s = data['Stats'][number]['Stats'][i]['value']
+            elif item == "Rating":
+                Rating = data['Stats'][number]['Stats'][i]['rank']
+                RatingPercent = data['Stats'][number]['Stats'][i]['percentile']
+
+    return [KDR, Kills, Rounds, Wins, Rating, RatingPercent, Top10s]
+
+
+def pubg_find(mode, region, data):
+    """
+    :param mode: solo, duo or squad
+    :param region: eu, na, as, sa, sea, oc, agg
+    :param data: the data to find the stuff from
+    :return:
+    """
+    # modes = ["solo", "duo", "squad"]
+    # print("ok so now it do a filter on {} and {}".format(mode, region))
+
+    loops = len(data['Stats'])
+
+    result = None
+
+    for i in range(0, loops - 1):
+        if data['Stats'][i]['Region'] == region:
+            if data['Stats'][i]['Match'] == mode:
+                result = i
+                break
+    return result
 
 
 def get_top5(data):
