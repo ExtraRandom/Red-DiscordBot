@@ -13,6 +13,8 @@ from mcstatus import MinecraftServer
 import requests
 import json
 
+from re import sub
+
 loop = asyncio.get_event_loop()
 log = logging.getLogger(__name__)
 
@@ -24,24 +26,24 @@ class Games:
     @commands.command(name="mc")
     async def minecraft_ip(self, ip: str):
         """Get Status of Minecraft Servers"""
-        # TODO remove '§' from text and format the embed better
         try:
             server = MinecraftServer.lookup(ip)
             status = server.status()
-            data = status.raw
-            # print(data)
+            data = status.raw  # print(data)
             ver = data['version']['name']
-            s_desc = "n/a"
+            s_desc = "N/A"
             try:
                 s_desc = data['description']['text']
             except TypeError:
                 s_desc = data['description']
 
-            s_desc = str(s_desc).replace("§0", "").replace("§1", "").replace("§2", "").replace("§3", "")\
-                .replace("§4", "").replace("§5", "").replace("§6", "").replace("§7", "").replace("§8", "")\
-                .replace("§9", "").replace("§a", "").replace("§b", "").replace("§c", "").replace("§d", "")\
-                .replace("§e", "").replace("§f", "").replace("§k", "").replace("§l", "").replace("§m", "")\
-                .replace("§n", "").replace("§o", "").replace("§r", "").replace("  ", "").replace("  ", "")
+            desc_filter = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "k", "l",
+                           "m", "n", "o", "r"]
+
+            for item in desc_filter:
+                s_desc = str(s_desc).replace("§{}".format(item), "")
+
+            s_desc = sub(' +', ' ', s_desc) # not sure if this is actually needed, will find out by using
 
             player_count = int(data['players']['online'])
             player_limit = int(data['players']['max'])
@@ -146,7 +148,6 @@ class Games:
                     except Exception as e:
                         pass
 
-
                     try:
                         games_730_searching = data["ISteamGameCoordinator"]["730"]["stats"]["players_searching"]
                         games_730_wait = data["ISteamGameCoordinator"]["730"]["stats"]["average_wait"]
@@ -240,7 +241,6 @@ class Games:
         if inp.replace(" ", "") != "!pd2":
             entered_name = inp.split()[1:]
             entered_name = ' '.join(entered_name).replace("@", "")
-            # print(entered_name)
 
             try:
                 user_id = steam_json.read(entered_name)
@@ -367,7 +367,6 @@ class Games:
                         kills = steam_json.read_startswith(data, "total_kills_", "csgo")
                         general = steam_json.read_startswith(data, "", "csgo")
                         mapwins = steam_json.read_startswith(data, "total_wins_map_", "csgo")
-                        # accuracy = steam_json.read_startswith(data, "")
                         kd_ratio = general[0] / general[1]
                         kd_ratio = str(kd_ratio)[:4]
 
@@ -471,7 +470,7 @@ class Games:
                                                             "Zombies: {}\n"
                                                             "Mega Zombies: {}\n"
                                                             "Animals: {}".format(kills[0], kills[1], kills[2],
-                                                                                  kills[3]))
+                                                                                 kills[3]))
                         embed.add_field(name="General", value="Items Crafted: {}\n"
                                                               "Resources Harvested: {}\n"
                                                               "Experience Gained: {}\n"
@@ -568,10 +567,10 @@ class Games:
                                                           "".format(time_played, level, wins))
 
                     embed.add_field(name="Totals", value="Eliminations: {}\n"
-                                                          "Deaths: {}\n"
-                                                          "Healing Done: {}\n"
-                                                          "Objective Kills: {}"
-                                                          "".format(elims_avg, death_avg, heals_avg, objks_avg))
+                                                         "Deaths: {}\n"
+                                                         "Healing Done: {}\n"
+                                                         "Objective Kills: {}"
+                                                         "".format(elims_avg, death_avg, heals_avg, objks_avg))
 
                     embed.add_field(name="Medals", value="Total: {}\n"
                                                          "Gold: {}\n"
@@ -698,7 +697,7 @@ class Games:
             await self.bot.say(embed=embed)
 
         else:  # if not working
-            await self.bot.edit_message(msg, "Error Occurred")
+            await self.bot.edit_message(msg, "Error occurred whilst getting data. Try again later.")
 
 
 def pubg_filter(data, number):

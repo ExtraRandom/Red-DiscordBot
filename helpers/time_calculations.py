@@ -2,9 +2,6 @@ from datetime import datetime
 import time
 
 
-# TODO remove unneeded stuff
-
-
 def create_msg(game, days, hrs, mins, maxlen):
     spaces = maxlen - len(game) + 30
     for _ in range(spaces):
