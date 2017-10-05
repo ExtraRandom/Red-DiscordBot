@@ -43,7 +43,7 @@ class Games:
             for item in desc_filter:
                 s_desc = str(s_desc).replace("§{}".format(item), "")
 
-            s_desc = sub(' +', ' ', s_desc) # not sure if this is actually needed, will find out by using
+            s_desc = sub(' +', ' ', s_desc)  # not sure if this is actually needed, will find out by using
 
             player_count = int(data['players']['online'])
             player_limit = int(data['players']['max'])
@@ -617,13 +617,23 @@ class Games:
 
         response = requests.request("GET", url, headers=headers)
 
-        data = json.loads(response.text)  # print(data)
+        data = json.loads(response.text)
+        # print(data)
 
         working = True
+        reason = ""
 
         try:
             if data['message']:
                 working = False
+                reason = data['message']
+        except KeyError:
+            pass
+
+        try:
+            if data['error']:
+                working = False
+                reason = data['error']
         except KeyError:
             pass
 
@@ -697,7 +707,8 @@ class Games:
             await self.bot.say(embed=embed)
 
         else:  # if not working
-            await self.bot.edit_message(msg, "Error occurred whilst getting data. Try again later.")
+            await self.bot.edit_message(msg, "Error occurred whilst getting data. Try again later.\nReason from Server:"
+                                             " {}".format(reason))
 
 
 def pubg_filter(data, number):
