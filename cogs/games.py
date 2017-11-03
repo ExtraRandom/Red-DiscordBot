@@ -14,6 +14,8 @@ import requests
 import json
 
 from re import sub
+import os.path
+# import pydest
 
 loop = asyncio.get_event_loop()
 log = logging.getLogger(__name__)
@@ -22,6 +24,8 @@ log = logging.getLogger(__name__)
 class Games:
     def __init__(self, bot):
         self.bot = bot
+        self.url_base = "https://www.bungie.net/Platform"
+        self.img_base = "https://www.bungie.net"
 
     @commands.command(name="mc")
     async def minecraft_ip(self, ip: str):
@@ -542,6 +546,7 @@ class Games:
 
                     time_played = int(stats['game_stats']['time_played'])
                     level = stats['overall_stats']['level']
+                    prestige = stats['overall_stats']['prestige']
                     wins = stats['overall_stats']['wins']
                     avatar = stats['overall_stats']['avatar']
 
@@ -556,6 +561,12 @@ class Games:
                     md_silver = int(stats['game_stats']['medals_silver'])
                     md_bronze = int(stats['game_stats']['medals_bronze'])
 
+                    # level_final = prestige + " " + level
+                    if prestige >= 1:
+                        level_final = str(prestige) + "-" + str(level)
+                    else:
+                        level_final = level
+
                     embed = discord.Embed(title="Overwatch Stats for {}".format(battletag),
                                           colour=discord.Colour.orange(),
                                           description="Quickplay Stats")
@@ -564,7 +575,7 @@ class Games:
                     embed.add_field(name="General", value="Time Played: {}\n"
                                                           "Level: {}\n"
                                                           "Wins: {}"
-                                                          "".format(time_played, level, wins))
+                                                          "".format(time_played, level_final, wins))
 
                     embed.add_field(name="Totals", value="Eliminations: {}\n"
                                                          "Deaths: {}\n"
@@ -709,6 +720,168 @@ class Games:
         else:  # if not working
             await self.bot.edit_message(msg, "Error occurred whilst getting data. Try again later.\nReason from Server:"
                                              " {}".format(reason))
+
+    @commands.command()
+    async def d2(self, bnet: str, character=1):
+        # https://bungie-net.github.io/multi/
+        # Doc's
+
+        # https://github.com/jgayfer/spirit/blob/master/cogs/destiny.py
+        # Very useful for figuring out how to get this working
+
+        msg_contents = "Getting Destiny 2 Stats for {}, this may take a while!".format(bnet)
+        msg = await self.bot.say(msg_contents)
+
+        if t.d2_api == "":
+            await self.bot.edit_message(msg, "Error: No Destiny 2 API key stated in tokens.py!")
+            return
+
+        headers = {
+            'X-API-Key': t.d2_api,
+        }
+
+        bnet = bnet.replace("#", "%23")
+        char = character - 1
+
+        search = self.url_base + "/Destiny2/SearchDestinyPlayer/4/" + bnet
+        user_info_r = requests.request("GET", search, headers=headers)
+        user_info = json.loads(user_info_r.text)  # print(user_info_r.text)
+
+        user_id = user_info['Response'][0]['membershipId']
+
+        user_search = self.url_base + "/Destiny2/4/Profile/" \
+                                      "" + user_id + "?components=100,200,205"
+
+        get_user = requests.request("GET", user_search, headers=headers)  # print(get_user.text)
+
+        data = json.loads(get_user.text)
+
+        chars = data['Response']['profile']['data']['characterIds']
+        char_id = 0
+
+        if (char + 1) > len(chars):
+            # char the user wants doesnt exist, default to 1
+            msg_contents += "\n{} only has {} character(s). No #{} character exists, getting stats from " \
+                            "character #1 instead.".format(bnet.replace("%23", "#"), len(chars), character)
+            await self.bot.edit_message(msg, msg_contents)
+            char_id = chars[0]
+        else:
+            char_id = chars[char]
+
+        if char_id == 0:
+            await self.bot.edit_message(msg, "An error occurred whilst getting stats. (char_id wasn't changed "
+                                             "for some reason, Thomas plz fix)")
+            return
+
+        """GET GENERAL STATS"""
+
+        msg_contents += "\n\nFetching General Stats... "
+        await self.bot.edit_message(msg, msg_contents)
+
+        char_data = data['Response']['characters']['data'][char_id]
+        t_race = char_data['raceType']
+        race_r = "N/A"
+        if t_race == 0: race_r = "Human"
+        elif t_race == 1: race_r = "Awoken"
+        elif t_race == 2: race_r = "Evo"
+
+        t_class = char_data['classType']
+        class_r = "N/A"
+        if t_class == 0: class_r = "Titan"
+        elif t_class == 1: class_r = "Hunter"
+        elif t_class == 2: class_r = "Warlock"
+
+        t_gender = char_data['genderType']
+        gender_r = "N/A"
+        if t_gender == 0: gender_r = "Male"
+        elif t_gender == 1: gender_r = "Female"
+
+        icon = char_data['emblemPath']
+        avatar = self.img_base + icon
+
+        level = char_data['levelProgression']['level']
+        light = char_data['light']
+
+        # print(class_r, race_r, gender_r)
+
+        msg_contents += " Done!\nFetching Weapon/Armour Stats... "
+        await self.bot.edit_message(msg, msg_contents)
+
+        """GET ITEMS"""
+
+        s_recovery = -1
+        s_resilience = -1
+        s_mobility = -1
+        s_power = -1
+
+        for stat in char_data['stats']:
+            stat_req = self.url_base + "/Destiny2/Manifest/DestinyStatDefinition/" + str(stat)
+            stat_resp = requests.request("GET", stat_req, headers=headers)  # print(stat_resp.text)
+            stat_data = json.loads(stat_resp.text)
+            try:
+                stat_name = stat_data['Response']['displayProperties']['name']
+                if stat_name == "Recovery": s_recovery = char_data['stats'][stat]
+                elif stat_name == "Resilience": s_resilience = char_data['stats'][stat]
+                elif stat_name == "Mobility": s_mobility = char_data['stats'][stat]
+                elif stat_name == "Power": s_power = char_data['stats'][stat]
+
+                # print(stat_data['Response']['displayProperties']['name'] + ": " + str(char_data['stats'][stat]))
+            except Exception as e:
+                pass
+
+        weapon_index = 0
+        armour_index = 0
+
+        weapons = []
+        armours = []
+
+        mins_played = int(char_data['minutesPlayedTotal'])
+        time_played = mins_played / 60
+
+        for item in data['Response']['characterEquipment']['data'][char_id]['items']:
+            item_hash = item['itemHash']
+            item_req = self.url_base + "/Destiny2/Manifest/DestinyInventoryItemDefinition/" + str(item_hash)
+            get_item_decode = requests.request("GET", item_req, headers=headers)
+            # print(get_item_decode.text)
+            idata = json.loads(get_item_decode.text)
+            name = idata['Response']['displayProperties']['name']
+
+            if weapon_index < 3:
+                # weapons[weapon_index] = name
+                weapons.append(name)
+                weapon_index += 1
+
+            elif armour_index < 5:
+                # armours[armour_index] = name
+                armours.append(name)
+                armour_index += 1
+
+        msg_contents += " Done!\nFormatting Data!"
+        await self.bot.edit_message(msg, msg_contents)
+
+        embed = discord.Embed(colour=discord.Colour.blue())
+        embed.set_author(name=bnet.replace("%23", "#"), icon_url="https://i.imgur.com/NF5PVtL.png")
+        embed.set_thumbnail(url=avatar)
+        embed.description = "Level {} {} {} {} |" \
+                            ":small_blue_diamond:{}\n" \
+                            "{} Mobility - {} Resilience - {} Recovery" \
+                            "".format(level, race_r, gender_r, class_r,
+                                      s_power,
+                                      s_mobility, s_resilience, s_recovery)
+        embed.add_field(name="Weapons", value="**Kinetic:** {}\n"
+                                              "**Energy:** {}\n"
+                                              "**Power:** {}"
+                                              "".format(weapons[0], weapons[1], weapons[2]))
+        embed.add_field(name="Armour", value="**Helmet:** {}\n"
+                                             "**Gauntlets:** {}\n"
+                                             "**Chest:** {}\n"
+                                             "**Legs:** {}\n"
+                                             "**Class Item:** {}"
+                                             "".format(armours[0], armours[1], armours[2], armours[3], armours[4]))
+        embed.add_field(name="Other Stats", value="**Time Played:** {} hours"
+                                                  "".format(round(time_played, 2)))
+        await self.bot.delete_message(msg)
+        await self.bot.say(embed=embed)
 
 
 def pubg_filter(data, number):

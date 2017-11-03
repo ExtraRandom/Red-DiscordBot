@@ -419,3 +419,44 @@ def read_startswith(data, startswith, game):
                         print("Error: {}".format(e))
 
                 return scheduler, servers, players, searching, search_time
+
+
+
+
+
+
+
+
+
+
+
+            #############################
+
+
+
+
+
+                @commands.command()
+                async def d2mu(self):
+                    msg = await self.bot.say("Checking for Destiny 2 Manifest Update")
+                    v_current = d2_mani_get_version(self.d2_mv_file)
+                    v_latest = await d2_main_get_latest(self.url_base, self.headers)
+                    if v_current != v_latest:
+                        print("Update Required")
+
+                    else:
+                        print("No Update Required")
+
+            def d2_mani_get_version(file):
+                if os.path.exists(file):
+                    with open(file, "r") as version_file:
+                        return version_file.readline()
+                else:
+                    return 0
+
+            async def d2_main_get_latest(url_base, headers):
+                get_manifest = requests.request("GET", (url_base + "/Destiny2/Manifest"), headers=headers)
+                manifest = json.loads(get_manifest.text)
+                version = manifest['Response']['version']
+
+                return version
