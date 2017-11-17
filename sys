@@ -6,7 +6,6 @@ BOT="red.py"
 HELP="Args: git, bot, kill, yt, u-r (update requirements)"
 HELP2="Legacy Args: bot_old, kill_old"
 # gp and tp commands only need to be used if monitor.bash is updated
-
 if [ -z "$*" ]; then
 	echo $HELP
 	echo $HELP2
@@ -16,7 +15,7 @@ else
         git pull
         cd ..
 		echo "Run ./run to update 'sys' file"
-	elif [ "$1" = "u-r" ]
+	elif [ "$1" = "u-r" ]; then
 		cd $DIR
 		pip3 install -U -r requirements.txt
 		cd ..
