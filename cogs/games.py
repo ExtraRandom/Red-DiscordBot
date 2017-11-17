@@ -731,12 +731,10 @@ class Games:
 
         Defaults to character 1 if no character is specified
         """
-
         # Some code from https://github.com/jgayfer/spirit/blob/master/cogs/destiny.py
 
-        f_bnet = bnet.replace("#", "%23")
         destiny = pydest.Pydest(t.d2_api)
-        pre_data = await destiny.api.search_destiny_player(4, f_bnet)  # print(pre_data)
+        pre_data = await destiny.api.search_destiny_player(4, bnet)  # print(pre_data)
         user_id = pre_data['Response'][0]['membershipId']  # print("user id: {}".format(user_id))
 
         try:
@@ -851,20 +849,6 @@ class Games:
         await self.bot.say(embed=embed)
 
         destiny.close()
-
-    @commands.command(hidden=True)
-    async def d2_test(self):
-        """For testing only"""
-        test_url = self.url_base + "/Destiny2/Manifest"
-        headers = {
-            'X-API-Key': t.d2_api,
-        }
-
-        res = requests.request("GET", test_url, headers=headers)
-
-        print(res.status_code)
-        print(res.text)
-
 
 
 def pubg_filter(data, number):
