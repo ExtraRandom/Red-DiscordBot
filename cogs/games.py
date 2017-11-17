@@ -15,7 +15,9 @@ import json
 
 from re import sub
 import os.path
-# import pydest
+
+import pydest
+
 
 loop = asyncio.get_event_loop()
 log = logging.getLogger(__name__)
@@ -47,7 +49,7 @@ class Games:
             for item in desc_filter:
                 s_desc = str(s_desc).replace("§{}".format(item), "")
 
-            s_desc = sub(' +', ' ', s_desc)  # not sure if this is actually needed, will find out by using
+            s_desc = sub(' +', ' ', s_desc)  # not sure if this is actually needed
 
             player_count = int(data['players']['online'])
             player_limit = int(data['players']['max'])
@@ -344,7 +346,7 @@ class Games:
             except KeyError as e:
                 log.warn("KeyError: {}".format(e))
                 await self.bot.say("Error: User {} has no Steam ID associated to them or an error occurred fetching "
-                                   "stats.")
+                                   "stats.".format(user))
         else:
             await self.bot.say("This command is disabled currently. Ask the bot owner to add a Steam WebAPI key in "
                                "tokens.py for it to be enabled")
@@ -628,6 +630,7 @@ class Games:
 
         response = requests.request("GET", url, headers=headers)
 
+        # print(response.text)
         data = json.loads(response.text)
         # print(data)
 
@@ -723,141 +726,106 @@ class Games:
 
     @commands.command()
     async def d2(self, bnet: str, character=1):
-        # https://bungie-net.github.io/multi/
-        # Doc's
+        """
+        Get Destiny 2 Stats and Equipped Items
 
-        # https://github.com/jgayfer/spirit/blob/master/cogs/destiny.py
-        # Very useful for figuring out how to get this working
+        Defaults to character 1 if no character is specified
+        """
 
-        msg_contents = "Getting Destiny 2 Stats for {}, this may take a while!".format(bnet)
-        msg = await self.bot.say(msg_contents)
+        # Some code from https://github.com/jgayfer/spirit/blob/master/cogs/destiny.py
 
-        if t.d2_api == "":
-            await self.bot.edit_message(msg, "Error: No Destiny 2 API key stated in tokens.py!")
+        f_bnet = bnet.replace("#", "%23")
+        destiny = pydest.Pydest(t.d2_api)
+        pre_data = await destiny.api.search_destiny_player(4, f_bnet)  # print(pre_data)
+        user_id = pre_data['Response'][0]['membershipId']  # print("user id: {}".format(user_id))
+
+        try:
+            profile_data = await destiny.api.get_profile(4, user_id, ['characters', 'characterEquipment', 'profiles'])
+        except pydest.PydestException as e:
+            await self.bot.say("Error getting Guardian Stats (Code: 1)")
             return
 
-        headers = {
-            'X-API-Key': t.d2_api,
-        }
+        if profile_data['ErrorCode'] != 1:
+            await self.bot.say("Error getting Guardian Stats (Code: 2)")
+            return
 
-        bnet = bnet.replace("#", "%23")
+        chars = len(profile_data['Response']['characters']['data'])
+        if character > chars or character < 1:
+            await self.bot.say("No chatacter #{} found, defaulting to character #1 instead".format(character))
+            character = 1
+
         char = character - 1
-
-        search = self.url_base + "/Destiny2/SearchDestinyPlayer/4/" + bnet
-        user_info_r = requests.request("GET", search, headers=headers)
-        user_info = json.loads(user_info_r.text)  # print(user_info_r.text)
-
-        user_id = user_info['Response'][0]['membershipId']
-
-        user_search = self.url_base + "/Destiny2/4/Profile/" \
-                                      "" + user_id + "?components=100,200,205"
-
-        get_user = requests.request("GET", user_search, headers=headers)  # print(get_user.text)
-
-        data = json.loads(get_user.text)
-
-        chars = data['Response']['profile']['data']['characterIds']
         char_id = 0
 
-        if (char + 1) > len(chars):
-            # char the user wants doesnt exist, default to 1
-            msg_contents += "\n{} only has {} character(s). No #{} character exists, getting stats from " \
-                            "character #1 instead.".format(bnet.replace("%23", "#"), len(chars), character)
-            await self.bot.edit_message(msg, msg_contents)
-            char_id = chars[0]
-        else:
-            char_id = chars[char]
-
-        if char_id == 0:
-            await self.bot.edit_message(msg, "An error occurred whilst getting stats. (char_id wasn't changed "
-                                             "for some reason, Thomas plz fix)")
+        try:
+            char_id = profile_data['Response']['profile']['data']['characterIds'][char]
+        except Exception as e:
+            await self.bot.say("Error getting Guardian Stats (Code: 3)")
             return
 
-        """GET GENERAL STATS"""
+        char_data = profile_data['Response']['characters']['data'][char_id]
 
-        msg_contents += "\n\nFetching General Stats... "
-        await self.bot.edit_message(msg, msg_contents)
+        role_dict = await destiny.decode_hash(char_data['classHash'], 'DestinyClassDefinition')
+        role = role_dict['displayProperties']['name']
 
-        char_data = data['Response']['characters']['data'][char_id]
-        t_race = char_data['raceType']
-        race_r = "N/A"
-        if t_race == 0: race_r = "Human"
-        elif t_race == 1: race_r = "Awoken"
-        elif t_race == 2: race_r = "Evo"
+        gender_dict = await destiny.decode_hash(char_data['genderHash'], 'DestinyGenderDefinition')
+        gender = gender_dict['displayProperties']['name']
 
-        t_class = char_data['classType']
-        class_r = "N/A"
-        if t_class == 0: class_r = "Titan"
-        elif t_class == 1: class_r = "Hunter"
-        elif t_class == 2: class_r = "Warlock"
-
-        t_gender = char_data['genderType']
-        gender_r = "N/A"
-        if t_gender == 0: gender_r = "Male"
-        elif t_gender == 1: gender_r = "Female"
-
-        icon = char_data['emblemPath']
-        avatar = self.img_base + icon
+        race_dict = await destiny.decode_hash(char_data['raceHash'], 'DestinyRaceDefinition')
+        race = race_dict['displayProperties']['name']
 
         level = char_data['levelProgression']['level']
         light = char_data['light']
 
-        # print(class_r, race_r, gender_r)
-
-        msg_contents += " Done!\nFetching Weapon/Armour Stats... "
-        await self.bot.edit_message(msg, msg_contents)
-
-        """GET ITEMS"""
-
-        s_recovery = -1
-        s_resilience = -1
-        s_mobility = -1
-        s_power = -1
-
-        for stat in char_data['stats']:
-            stat_req = self.url_base + "/Destiny2/Manifest/DestinyStatDefinition/" + str(stat)
-            stat_resp = requests.request("GET", stat_req, headers=headers)  # print(stat_resp.text)
-            stat_data = json.loads(stat_resp.text)
-            try:
-                stat_name = stat_data['Response']['displayProperties']['name']
-                if stat_name == "Recovery": s_recovery = char_data['stats'][stat]
-                elif stat_name == "Resilience": s_resilience = char_data['stats'][stat]
-                elif stat_name == "Mobility": s_mobility = char_data['stats'][stat]
-                elif stat_name == "Power": s_power = char_data['stats'][stat]
-
-                # print(stat_data['Response']['displayProperties']['name'] + ": " + str(char_data['stats'][stat]))
-            except Exception as e:
-                pass
-
-        weapon_index = 0
-        armour_index = 0
-
-        weapons = []
-        armours = []
+        avatar = self.img_base + char_data['emblemPath']
 
         mins_played = int(char_data['minutesPlayedTotal'])
         time_played = mins_played / 60
 
-        for item in data['Response']['characterEquipment']['data'][char_id]['items']:
-            item_hash = item['itemHash']
-            item_req = self.url_base + "/Destiny2/Manifest/DestinyInventoryItemDefinition/" + str(item_hash)
-            get_item_decode = requests.request("GET", item_req, headers=headers)
-            # print(get_item_decode.text)
-            idata = json.loads(get_item_decode.text)
-            name = idata['Response']['displayProperties']['name']
+        # print(role, gender, race, level, light)
 
-            if weapon_index < 3:
-                # weapons[weapon_index] = name
-                weapons.append(name)
-                weapon_index += 1
+        equipped = profile_data['Response']['characterEquipment']['data'][char_id]['items']
 
-            elif armour_index < 5:
-                # armours[armour_index] = name
-                armours.append(name)
-                armour_index += 1
+        weapon_i = 0
+        armour_i = 0
 
-        msg_contents += " Done!\nFormatting Data!"
-        await self.bot.edit_message(msg, msg_contents)
+        weapons = []
+        armours = []
+
+        for item in equipped:
+
+            item_dict = await destiny.decode_hash(item['itemHash'], 'DestinyInventoryItemDefinition')
+            item_name = item_dict['displayProperties']['name']
+
+            if weapon_i < 3:
+                weapons.append(item_name)
+                weapon_i += 1
+
+            elif armour_i < 5:
+                armours.append(item_name)
+                armour_i += 1
+
+        stat_hashs = char_data['stats']
+
+        s_recovery = -1
+        s_resilience = -1
+        s_mobility = -1
+
+        for stat in stat_hashs:
+            stat_dict = await destiny.decode_hash(stat, 'DestinyStatDefinition')  # print(stat, stat_dict)
+            try:
+                if stat_dict['displayProperties']['name'] == "Recovery":
+                    s_recovery = stat_hashs[stat]
+                elif stat_dict['displayProperties']['name'] == "Mobility":
+                    s_mobility = stat_hashs[stat]
+                elif stat_dict['displayProperties']['name'] == "Resilience":
+                    s_resilience = stat_hashs[stat]
+
+                if s_mobility > -1 and s_recovery > -1 and s_resilience > -1:
+                    break
+
+            except KeyError:  # print("heck")
+                pass
 
         embed = discord.Embed(colour=discord.Colour.blue())
         embed.set_author(name=bnet.replace("%23", "#"), icon_url="https://i.imgur.com/NF5PVtL.png")
@@ -865,8 +833,7 @@ class Games:
         embed.description = "Level {} {} {} {} |" \
                             ":small_blue_diamond:{}\n" \
                             "{} Mobility - {} Resilience - {} Recovery" \
-                            "".format(level, race_r, gender_r, class_r,
-                                      s_power,
+                            "".format(level, race, gender, role, light,
                                       s_mobility, s_resilience, s_recovery)
         embed.add_field(name="Weapons", value="**Kinetic:** {}\n"
                                               "**Energy:** {}\n"
@@ -880,8 +847,10 @@ class Games:
                                              "".format(armours[0], armours[1], armours[2], armours[3], armours[4]))
         embed.add_field(name="Other Stats", value="**Time Played:** {} hours"
                                                   "".format(round(time_played, 2)))
-        await self.bot.delete_message(msg)
+
         await self.bot.say(embed=embed)
+
+        destiny.close()
 
 
 def pubg_filter(data, number):
@@ -941,7 +910,7 @@ def pubg_find(mode, region, data):
 
     result = None
 
-    for i in range(0, loops - 1):
+    for i in range(0, loops):
         if data['Stats'][i]['Region'] == region:
             if data['Stats'][i]['Match'] == mode:
                 result = i

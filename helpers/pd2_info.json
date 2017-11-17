@@ -109,7 +109,24 @@
         "weapon_kills_g26": "Chimano Compact Pistol",
         "weapon_kills_p226": "Signature .40 Pistol",
         "weapon_kills_deagle": "Deagle Pistol",
-        "weapin_kills_arbiter": "Arbiter Grenade Launcher"
+        "weapon_kills_arbiter": "Arbiter Grenade Launcher",
+        "weapon_kills_contraband": "Little Friend 7.62 Rifle",
+        "weapon_kills_ray": "Commando 101 Launcher",
+        "weapon_kills_contraband_m203": "Little Friend 7.62 Grenade Launcher",
+        "weapon_kills_tti": "Contractor .308 Sniper",
+        "weapon_kills_siltstone": "Grom Sniper",
+        "weapon_kills_flint": "AK17 Rifle",
+        "weapon_kills_coal": "Tatonka SMG",
+        "weapon_kills_lemming": "5/7 AP Pistol",
+        "weapon_kills_chincilla": "Castigo .44 Revolver",
+        "weapon_kills_x_chinchilla": "Akimbo Castigo .44 Revolver",
+        "weapon_kills_ching": "Galant Rifle",
+        "weapon_kills_erma": "MP 40 SMG",
+        "weapon_kills_basset": "Grimm 12G Shotgun",
+        "weapon_kills_shrew": "Crosskill Guard Pistol",
+        "weapon_kills_breech": "Parabellum Pistol",
+        "weapon_kills_x_basset": "Brothers Grimm 12G Shotgun",
+        "weapon_kills_x_shrew": "Akimbo Crosskill Guard Pistol"
     },
     "Gadget":{
         "gadget_used_ammo_bag": "Ammo Bag",
@@ -133,37 +150,14 @@
     "Kills": [
         "cop", "fbi", "fbi_swat", "fbi_heavy_swat", "swat", "heavy_swat", "city_swat", "security", "gensec", "gangster", "sniper", "shield", "spooc",
         "tank", "taser", "mobster", "mobster_boss", "civilian", "civilian_female", "tank_hw", "hector_boss", "hector_boss_no_armor", "tank_green",
-        "tank_black", "tank_skull", "hostage_rescue", "murkywater", "phalanx_minion", "biker_boss", "cop_female", "medic", "chavez_boss"
+        "tank_black", "tank_skull", "hostage_rescue", "murkywater", "phalanx_minion", "biker_boss", "cop_female", "medic", "chavez_boss",
+        "security_undominatable", "bolivian", "bolivian_indoors", "drug_lord_boss", "drug_lord_boss_stealth", "escort_chinese_prisoner"
     ],
     "Difficulty": [
         "normal", "hard", "overkill", "overkill_145", "overkill_290", "easy_wish", "sm_wish"
     ],
-    "Achievements":{
-        "hot_wheels":{
-            "name": "Coming in Hot",
-            "description": "On day 1 of the Watchdogs job, don't let the cops shoot and destroy the escape vehicle.",
-            "image": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/218620/f6ed9cd6ec9750bcd36193c74e6f16104f6c1267.jpg",
-            "tags":[
-                "watchdogs", "escape", "vehicle", "coming", "in", "hot"
-            ]
-        },
-        "fish_ai":{
-            "name": "Fish A.I.",
-            "description": "On day 2 of the Watchdogs job, throw a loot bag into the sea, hoping fish move away as it gets near.",
-            "image": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/218620/19fd9f952f27bad6bc909721a69c6374cfa5e31b.jpg",
-            "tags":[
-                "watchdogs", "fish", "ai", "a.i.", "throw"
-            ]
-        },
-        "":{
-            "name": "",
-            "description": "",
-            "image": ""
-        }
-    },
     "#Sources+Comments":[
         "https://steamdb.info/app/218620/stats/", "Steam WebAPI",
-        "http://wiki.modworkshop.net/Payday_2/Weapon_IDs", "http://wiki.modworkshop.net/Payday_2/Mask_IDs",
-        "Needs Updating"
+        "LAST UPDATED 17/11/2017", "Last game update at this time was #165"
     ]
 }
