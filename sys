@@ -4,17 +4,19 @@
 DIR="Red-DiscordBot"
 BOT="red.py"
 HELP="Args: git, bot, kill, yt, u-r (update requirements)"
-HELP2="Legacy Args: bot_old, kill_old"
+# HELP2="Legacy Args: bot_old, kill_old"
 # gp and tp commands only need to be used if monitor.bash is updated
 if [ -z "$*" ]; then
 	echo $HELP
-	echo $HELP2
+	# echo $HELP2
 else
     if [ "$1" = "git" ]; then
         cd $DIR
         git pull
         cd ..
 		echo "Run ./run to update 'sys' file"
+	elif [ "$1" = "yt" ]; then
+		sudo -H pip install --upgrade youtube-dl
 	elif [ "$1" = "u-r" ]; then
 		cd $DIR
 		pip3 install -U -r requirements.txt
@@ -35,15 +37,13 @@ else
 		cd ..
 	elif [ "$1" = "kill_old" ]; then
         pkill -f -e red.py
-	######
 	elif [ "$1" = "gp" ]; then # Give Permission to monitor
 		chmod 777 ./Red-DiscordBot/monitor.bash
 	elif [ "$1" = "tp" ]; then # Take Permission from monitor
 		chmod 644 ./Red-DiscordBot/monitor.bash
-	elif [ "$1" = "yt" ]; then
-		sudo -H pip install --upgrade youtube-dl
+	######
     else
         echo $HELP
-		echo $HELP2
+		# echo $HELP2
     fi
 fi

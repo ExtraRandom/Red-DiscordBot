@@ -1,0 +1,9 @@
+FILE=Red-DiscordBot/sys
+if [ -f $FILE ]; then
+   echo "Found new 'sys' file, moving now"
+   rm sys -f
+   mv $FILE sys
+   chmod 777 sys
+else
+   echo "No new 'sys' file found"
+fi

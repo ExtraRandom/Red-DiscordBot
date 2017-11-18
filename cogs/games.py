@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 class Games:
     def __init__(self, bot):
         self.bot = bot
-        self.url_base = "https://www.bungie.net/Platform"
+        # self.url_base = "https://www.bungie.net/Platform"
         self.img_base = "https://www.bungie.net"
 
     @commands.command(name="mc")
@@ -510,11 +510,14 @@ class Games:
                 # print("oh no")
 
     @commands.command()
-    async def overwatch(self, region: str, battletag: str):
-        """Get Overwatch Stats - Regions are 'eu', 'us' and 'kr'"""
+    async def overwatch(self, battletag: str, region="eu"):
+        """Get Overwatch Stats - Regions are 'eu', 'us' and 'kr'
+        Default Region is EU"""
 
         # Updated to use https://github.com/SunDwarf/OWAPI/blob/master/api.md
         # https://owapi.net/api/v3/u/ExtraRandom-2501/blob?format=json_pretty
+
+        # TODO add competitive stats
 
         msg = await self.bot.say("Fetching Stats for {}".format(battletag))
 
@@ -780,8 +783,6 @@ class Games:
         mins_played = int(char_data['minutesPlayedTotal'])
         time_played = mins_played / 60
 
-        # print(role, gender, race, level, light)
-
         equipped = profile_data['Response']['characterEquipment']['data'][char_id]['items']
 
         weapon_i = 0
@@ -822,7 +823,7 @@ class Games:
                 if s_mobility > -1 and s_recovery > -1 and s_resilience > -1:
                     break
 
-            except KeyError:  # print("heck")
+            except KeyError:
                 pass
 
         embed = discord.Embed(colour=discord.Colour.blue())
