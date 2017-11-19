@@ -15,7 +15,7 @@ def read(user):
         data = json.load(data_file)
         # TODO see if checking whether the user has the game or not can be done here
         try:
-            print("read user '", user, "' for info :", data[user])
+            # print("read user '", user, "' for info :", data[user])
             return data[user]
         except KeyError as e:
             print("KeyError: {}".format(e))

@@ -886,8 +886,7 @@ class Games:
 def parse_user(msg):
     user = str(msg.author.id)
     inp = msg.content
-    check_other = inp.split(" ")
-    print("CHECK OTHER IS: ", check_other)
+    check_other = inp.split(" ")  # print("CHECK OTHER IS: ", check_other)
     try:
 
         user_id = check_other[1]
