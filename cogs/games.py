@@ -462,6 +462,7 @@ class Games:
         """Get Unturned Stats, Mention someone to get their stats
         E.g. "?unturned" for personal stats, "?unturned @SomeUser" for SomeUser's stats
         """
+        print(ctx.message.content)
         user_id = parse_user(ctx.message)
         steam_id = steam_json.read(user_id)
         username = await steam_from_id(steam_id)
