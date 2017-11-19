@@ -892,7 +892,7 @@ def parse_user(msg):
 
         user_id = check_other[1]
         if user_id.startswith("<@"):
-            user_id = user_id.replace("<", "").replace("@", "").replace(">", "")  #.replace("!", "")
+            user_id = user_id.replace("<", "").replace("@", "").replace(">", "").replace("!", "")
         else:
             user_id = None
     except IndexError:
