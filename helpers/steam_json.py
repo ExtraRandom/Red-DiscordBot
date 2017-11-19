@@ -1,6 +1,4 @@
-import json
-import bs4  # import requests
-import aiohttp  # import asyncio
+import json  # import bs4  # import requests # import aiohttp  # import asyncio
 
 id_file = "helpers/steam_id.json"
 pd2_file = "helpers/pd2_info.json"
@@ -17,10 +15,10 @@ def read(user):
         data = json.load(data_file)
         # TODO see if checking whether the user has the game or not can be done here
         try:
-            # print("read user '", user, "' for info :", data[user])
+            print("read user '", user, "' for info :", data[user])
             return data[user]
         except KeyError as e:
-            # print("KeyError: {}".format(e))
+            print("KeyError: {}".format(e))
             return 0
 
 # Move to code dump some when
