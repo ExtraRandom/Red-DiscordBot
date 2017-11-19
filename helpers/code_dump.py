@@ -647,3 +647,57 @@ def read_startswith(data, startswith, game):
                 end = time.time()
 
                 await self.bot.say("That took {}".format(str(end - start)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                ############################
+
+
+
+
+
+                @commands.command(hidden=True)
+                @checks.is_owner()
+                async def test(self, user: str, id: int):
+                    print("heck")
+
+                    print(user)
+                    print(id)
+
+                    id_file = "helpers/steam_id.json"
+                    with open(id_file) as id_file:
+                        data = json.load(id_file)
+                        print(data)
+
+                        finished = json.dumps(data)
+                        print(finished)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

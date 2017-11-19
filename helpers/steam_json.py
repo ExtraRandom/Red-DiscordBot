@@ -1,8 +1,6 @@
 import json
-import bs4
-import requests
-import aiohttp
-import asyncio
+import bs4  # import requests
+import aiohttp  # import asyncio
 
 id_file = "helpers/steam_id.json"
 pd2_file = "helpers/pd2_info.json"
@@ -17,16 +15,18 @@ For reading and writing to steam_id.json
 def read(user):
     with open(id_file) as data_file:
         data = json.load(data_file)
-        # TODO check user exists - if no stats exist then user doesnt own the game
+        # TODO see if checking whether the user has the game or not can be done here
         try:
+            # print("read user '", user, "' for info :", data[user])
             return data[user]
         except KeyError as e:
-            print("KeyError: {}")
+            # print("KeyError: {}".format(e))
             return 0
 
-
+# Move to code dump some when
+"""
 def write(user_discord, user_steamid):
-    """CURRENTLY THIS MESSES UP THE FILE WITH /'s"""
+    ""CURRENTLY THIS MESSES UP THE FILE WITH /'s""
     with open(id_file) as data_file:
         data = json.load(data_file)
         try:
@@ -42,7 +42,7 @@ def write(user_discord, user_steamid):
 
 
 async def check_profile(user_id):
-    """Returns True if profile exists, false if not"""
+    ""Returns True if profile exists, false if not""
 
     with aiohttp.ClientSession() as session:
         url = "http://steamcommunity.com/profiles/{}".format(user_id)
@@ -59,7 +59,7 @@ async def check_profile(user_id):
                     return True
             except Exception as e:
                 print("something went wrong: {}".format(e))
-
+"""
 
 """
 For reading the .json containing stat info
@@ -78,7 +78,6 @@ def steam_read(data, stat_name):
 
 
 def csgo_info():
-
     with open(csgo_file) as out_file2:
         game_data = json.load(out_file2)
 

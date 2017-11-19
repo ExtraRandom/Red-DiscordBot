@@ -16,6 +16,8 @@ import json
 from re import sub
 import os.path
 
+from cogs.utils import checks
+
 import pydest
 
 
@@ -28,6 +30,7 @@ class Games:
         self.bot = bot
         # self.url_base = "https://www.bungie.net/Platform"
         self.img_base = "https://www.bungie.net"
+        self.er_id = "<@92562410493202432>"
 
     @commands.command(name="mc")
     async def minecraft_ip(self, ip: str):
@@ -239,39 +242,42 @@ class Games:
 
     @commands.command(pass_context=True)
     async def pd2(self, ctx):
-        """Get Payday 2 Stats"""
+        """Get Payday 2 Stats, Mention someone to get their stats
+        E.g. "?pd2" for personal stats, "?pd2 @SomeUser" for SomeUser's stats
+        """
         run = True
-        user = str(ctx.message.author)
-        inp = ctx.message.content
-
-        if inp.replace(" ", "") != "!pd2":
-            entered_name = inp.split()[1:]
-            entered_name = ' '.join(entered_name).replace("@", "")
-
-            try:
-                user_id = steam_json.read(entered_name)
-                user = entered_name
-            except KeyError as e:
-                await self.bot.say("Error: User with name '{}' not found on list.".format(entered_name))
-                return
+        user_id = parse_user(ctx.message)
+        steam_id = steam_json.read(user_id)
+        username = await steam_from_id(steam_id)
+        if user_id is not None:
+            user = "<@" + user_id + ">"
         else:
-            try:
-                user_id = steam_json.read(user)
-            except KeyError as e:
-                await self.bot.say("Error: User {} has no Steam ID associated to them.".format(user))
-                return
+            await self.bot.say("Error: '{}' is not a user. Try mentioning the desired user to get their stats"
+                               ", or only type the command without anything following it you get your own stats."
+                               "".format(" ".join(ctx.message.content.split(" ")[1:])))
+            return
+
+        if steam_id == 0:
+            await self.bot.say("Error: User {} has no Steam ID associated to them. {} plz fix!".format(user_id,
+                                                                                                       self.er_id))
+            return
 
         if not t.web_api == "" and run:
             try:
                 link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=218620&key={}" \
                        "&steamid={}&format=json" \
-                       "".format(t.web_api, user_id)
+                       "".format(t.web_api, steam_id)
 
                 with aiohttp.ClientSession() as session:
                     async with session.get(link)as resp:
                         data = await resp.text()  # resp.json()
 
-                        heist_s = steam_json.steam_read(data, "heist_success")
+                        try:
+                            heist_s = steam_json.steam_read(data, "heist_success")
+                        except KeyError:
+                            await self.bot.say("Error: User {} ({} on Steam) does not own Payday 2".format(user,
+                                                                                                           username))
+                            return
                         heist_f = steam_json.steam_read(data, "heist_failed")
 
                         kills = steam_json.read_startswith(data, "enemy_kills_", "pd2")
@@ -298,7 +304,7 @@ class Games:
                         most_used_gadget, most_used_gadget_uses = steam_json.gadget_read(data)
                         most_used_armor, most_used_armor_uses = steam_json.armor_read(data)
 
-                        embed = discord.Embed(title="PD2 Stats for " + user,
+                        embed = discord.Embed(title="PD2 Stats for " + username,
                                               colour=discord.Colour.blue(),
                                               url="http://pd2stats.com/profiles/" + user_id)
 
@@ -353,10 +359,21 @@ class Games:
 
     @commands.command(pass_context=True)
     async def csgo(self, ctx):
-        """Get CS:GO Stats"""
-        user = str(ctx.message.author)
-        user_id = steam_json.read(user)
-        if user_id == 0:
+        """Get CS:GO Stats, Mention someone to get their stats
+        E.g. "?csgo" for personal stats, "?csgo @SomeUser" for SomeUser's stats
+        """
+        user_id = parse_user(ctx.message)
+        steam_id = steam_json.read(user_id)
+        username = await steam_from_id(steam_id)
+        if user_id is not None:
+            user = "<@" + user_id + ">"
+        else:
+            await self.bot.say("Error: '{}' is not a user. Try mentioning the desired user to get their stats"
+                               ", or only type the command without anything following it you get your own stats."
+                               "".format(" ".join(ctx.message.content.split(" ")[1:])))
+            return
+
+        if steam_id == 0:
             await self.bot.say("Error: User {} has no Steam ID associated to them.".format(user))
             return
 
@@ -364,7 +381,7 @@ class Games:
             try:
                 link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=730&key={}" \
                        "&steamid={}&format=json" \
-                       "".format(t.web_api, user_id)
+                       "".format(t.web_api, steam_id)
 
                 with aiohttp.ClientSession() as session:
                     async with session.get(link)as resp:
@@ -381,7 +398,7 @@ class Games:
 
                         gdata = steam_json.csgo_info()
 
-                        embed = discord.Embed(title="CS:GO Stats for {}".format(user),
+                        embed = discord.Embed(title="CS:GO Stats for {}".format(username),
                                               colour=discord.Colour.dark_green())
 
                         embed.add_field(name="General", value="Total Kills: {}\n"
@@ -441,35 +458,51 @@ class Games:
                             await self.bot.say("I need the `Embed links` permission "
                                                "to send this")
             except KeyError as e:
-                self.bot.say("Error finding stat - {}".format(e))
+                await self.bot.say("Error: User {} ({} on Steam) does not own CS:GO.".format(user,
+                                                                                             username))
 
     @commands.command(pass_context=True)
     async def unturned(self, ctx):
-        """Get Unturned Stats"""
+        """Get Unturned Stats, Mention someone to get their stats
+        E.g. "?unturned" for personal stats, "?unturned @SomeUser" for SomeUser's stats
+        """
+        user_id = parse_user(ctx.message)
+        steam_id = steam_json.read(user_id)
+        username = await steam_from_id(steam_id)
+        if user_id is not None:
+            user = "<@" + user_id + ">"
+        else:
+            await self.bot.say("Error: '{}' is not a user. Try mentioning the desired user to get their stats"
+                               ", or only type the command without anything following it you get your own stats."
+                               "".format(" ".join(ctx.message.content.split(" ")[1:])))
+            return
 
-        user = str(ctx.message.author)
-        user_id = steam_json.read(user)
-        if user_id == 0:
+        if steam_id == 0:
             await self.bot.say("Error: User {} has no Steam ID associated to them.".format(user))
             return
 
         if not t.web_api == "":
-            # try:
+            try:
                 link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=304930&key={}" \
                        "&steamid={}&format=json" \
-                       "".format(t.web_api, user_id)
+                       "".format(t.web_api, steam_id)
 
                 with aiohttp.ClientSession() as session:
                     async with session.get(link)as resp:
                         data = await resp.text()
 
-                        kills = steam_json.read_startswith(data, "Kills_", "unturned")
+                        try:
+                            kills = steam_json.read_startswith(data, "Kills_", "unturned")
+                        except Exception as e:
+                            await self.bot.say("Error: User {} ({} on Steam) does not own CS:GO.".format(user,
+                                                                                                         username))
+                            return
                         founds = steam_json.read_startswith(data, "Found_", "unturned")
                         travel = steam_json.read_startswith(data, "Travel_", "unturned")
                         acc = steam_json.read_startswith(data, "", "unturned")
                         a_wins = steam_json.steam_read(data, "Arena_Wins")
 
-                        embed = discord.Embed(title="Unturned Stats for " + user,
+                        embed = discord.Embed(title="Unturned Stats for " + username,
                                               colour=discord.Colour.green())
 
                         embed.add_field(name="Kills", value="Players: {}\n"
@@ -506,8 +539,9 @@ class Games:
                             await self.bot.say("I need the `Embed links` permission "
                                                "to send this")
 
-            # except Exception as e:
-                # print("oh no")
+            except Exception as e:
+                log.warn("Error in unturned command: ", e)
+                await self.bot.say("Error: Issue occurred whilst getting Unturned Stats")
 
     @commands.command()
     async def overwatch(self, battletag: str, region="eu"):
@@ -850,6 +884,37 @@ class Games:
         await self.bot.say(embed=embed)
 
         destiny.close()
+
+
+def parse_user(msg):
+    user = str(msg.author.id)
+    inp = msg.content
+    check_other = inp.split(" ")  # print("CHECK OTHER IS: ", check_other)
+    try:
+        user_id = check_other[1]
+        if user_id.startswith("<@"):
+            user_id = user_id.replace("<", "").replace("@", "").replace(">", "")
+        else:
+            user_id = None
+    except IndexError:
+        user_id = user
+
+    return user_id
+
+async def steam_from_id(s_id: int):
+    try:
+        url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={}&format=json&steamids={}" \
+              "".format(t.web_api, s_id)
+        res = requests.request("GET", url)
+        if res.status_code == 200:
+            data = json.loads(res.text)
+            steam_name = data['response']['players'][0]['personaname']
+            return steam_name
+        else:
+            return None
+    except Exception as e:
+        # log.warn("Error getting steam name from id: {}".format(e))
+        return None
 
 
 def pubg_filter(data, number):
