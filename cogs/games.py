@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from datetime import datetime  # , timedelta
+from datetime import datetime
 
-from helpers import tokens as t, steam_json  # , time_calculations as tc
+from helpers import tokens as t, steam_json, bnet_json
 
 import aiohttp
 from discord.ext import commands
@@ -14,10 +14,6 @@ import requests
 import json
 
 from re import sub
-import os.path
-
-from cogs.utils import checks
-
 import pydest
 
 
@@ -889,11 +885,13 @@ class Games:
 def parse_user(msg):
     user = str(msg.author.id)
     inp = msg.content
-    check_other = inp.split(" ")  # print("CHECK OTHER IS: ", check_other)
+    check_other = inp.split(" ")
+    print("CHECK OTHER IS: ", check_other)
     try:
+
         user_id = check_other[1]
         if user_id.startswith("<@"):
-            user_id = user_id.replace("<", "").replace("@", "").replace(">", "")
+            user_id = user_id.replace("<", "").replace("@", "").replace(">", "").replace("!", "")
         else:
             user_id = None
     except IndexError:
