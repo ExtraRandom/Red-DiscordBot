@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from helpers import tokens as t, steam_json, bnet_json
+from helpers import tokens as t, steam_json  # , bnet_json
 
 import aiohttp
 from discord.ext import commands
