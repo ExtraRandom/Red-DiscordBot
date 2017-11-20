@@ -777,12 +777,11 @@ class Games:
             return
 
         destiny = pydest.Pydest(t.d2_api)
-        pre_data = await destiny.api.search_destiny_player(4, bnet)
-        print(pre_data)
+        pre_data = await destiny.api.search_destiny_player(4, bnet)  # print(pre_data)
         try:
             user_id = pre_data['Response'][0]['membershipId']  # print("user id: {}".format(user_id))
         except IndexError:
-            await self.bot.say("User '{}' does not own Destiny 2.")
+            await self.bot.say("User '{}' does not own Destiny 2.".format(bnet))
             return
 
         try:
