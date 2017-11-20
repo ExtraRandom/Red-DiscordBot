@@ -637,9 +637,9 @@ class Games:
             except discord.HTTPException:
                 await self.bot.say("I need the `Embed links` permission "
                                    "to send this")
+                # TODO repeat this on other commands
         else:
-            await self.bot.say("Error: Couldn't fetch stats, check spelling and try again. Check Overwatch server"
-                               "status if issue persists.")
+            await self.bot.say("Error: Couldn't fetch stats, check spelling and try again.")
 
     @commands.command()
     async def pubg(self, bg_name: str, region="eu"):
@@ -649,6 +649,8 @@ class Games:
 
         Regions: AS, NA, SEA, EU, OC, SA, All
         """
+
+        # TODO error catch - if user enters a name that doesnt exist
 
         msg = await self.bot.say("Fetching PUBG Stats for {}".format(bg_name))
 
@@ -767,9 +769,21 @@ class Games:
         """
         # Some code from https://github.com/jgayfer/spirit/blob/master/cogs/destiny.py
 
+        # TODO error catching
+
+        if len(bnet.split("#")) == 1:
+            await self.bot.say("'{}' is not a BattleTag. An example of a correct battletag is ExtraRandom#2501."
+                               "".format(bnet))
+            return
+
         destiny = pydest.Pydest(t.d2_api)
-        pre_data = await destiny.api.search_destiny_player(4, bnet)  # print(pre_data)
-        user_id = pre_data['Response'][0]['membershipId']  # print("user id: {}".format(user_id))
+        pre_data = await destiny.api.search_destiny_player(4, bnet)
+        print(pre_data)
+        try:
+            user_id = pre_data['Response'][0]['membershipId']  # print("user id: {}".format(user_id))
+        except IndexError:
+            await self.bot.say("User '{}' does not own Destiny 2.")
+            return
 
         try:
             profile_data = await destiny.api.get_profile(4, user_id, ['characters', 'characterEquipment', 'profiles'])
