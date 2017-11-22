@@ -696,6 +696,375 @@ def read_startswith(data, startswith, game):
 
 
 
+"""
+For reading and writing to steam_id.json
+"""
+
+"""
+def read(user):
+    with open(id_file) as data_file:
+        data = json.load(data_file)
+        # TODO see if checking whether the user has the game or not can/should be done here
+        try:
+            # print("read user '", user, "' for info :", data[user])
+            return data[user]
+        except KeyError as e:
+            print("Steam - KeyError: {}".format(e))
+            return 0
+"""
+# Move to code dump some when
+"""
+def write(user_discord, user_steamid):
+    ""CURRENTLY THIS MESSES UP THE FILE WITH /'s""
+    with open(id_file) as data_file:
+        data = json.load(data_file)
+        try:
+            data[user_discord] = user_steamid
+            print(data)
+            with open(id_file, "w") as data_file2:
+                jdata = json.dumps(data)
+                json.dump(jdata, data_file2)
+            return True
+        except KeyError as e:
+            print("ker err: {}".format(e))
+            return False
+
+
+async def check_profile(user_id):
+    ""Returns True if profile exists, false if not""
+
+    with aiohttp.ClientSession() as session:
+        url = "http://steamcommunity.com/profiles/{}".format(user_id)
+        async with session.get(url) as resp:
+            try:
+                data = await resp.text()
+                doc = bs4.BeautifulSoup(data, "html.parser")
+                error = doc.select('head title')[0].getText()
+                if error == "Steam Community :: Error":
+                    print("false exist")
+                    return False
+                else:
+                    print("true exist")
+                    return True
+            except Exception as e:
+                print("something went wrong: {}".format(e))
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@commands.command(pass_context=True)
+    async def unturned(self, ctx):
+        """Get Unturned Stats, Mention someone to get their stats
+        E.g. "?unturned" for personal stats, "?unturned @SomeUser" for SomeUser's stats
+        """
+        print(ctx.message.content)
+        user_id = parse_user(ctx.message)
+        steam_id = id_json.read(user_id, self.s)
+        username = await steam_from_id(steam_id)
+        if user_id is not None:
+            user = "<@" + user_id + ">"
+        else:
+            await self.bot.say("Error: '{}' is not a user. Try mentioning the desired user to get their stats"
+                               ", or only type the command without anything following it you get your own stats."
+                               "".format(" ".join(ctx.message.content.split(" ")[1:])))
+            return
+
+        if steam_id == 0:
+            await self.bot.say("Error: User {} has no Steam ID associated to them.".format(user))
+            return
+
+        if not t.web_api == "":
+            try:
+                link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=304930&key={}" \
+                       "&steamid={}&format=json" \
+                       "".format(t.web_api, steam_id)
+
+                with aiohttp.ClientSession() as session:
+                    async with session.get(link)as resp:
+                        data = await resp.text()
+
+                        try:
+                            kills = steam_json.read_startswith(data, "Kills_", "unturned")
+                        except Exception as e:
+                            await self.bot.say("Error: User {} ({} on Steam) does not own Unturned.".format(user,
+                                                                                                            username))
+                            return
+                        founds = steam_json.read_startswith(data, "Found_", "unturned")
+                        travel = steam_json.read_startswith(data, "Travel_", "unturned")
+                        acc = steam_json.read_startswith(data, "", "unturned")
+                        a_wins = steam_json.steam_read(data, "Arena_Wins")
+
+                        embed = discord.Embed(title="Unturned Stats for " + username,
+                                              colour=discord.Colour.green())
+
+                        embed.add_field(name="Kills", value="Players: {}\n"
+                                                            "Zombies: {}\n"
+                                                            "Mega Zombies: {}\n"
+                                                            "Animals: {}".format(kills[0], kills[1], kills[2],
+                                                                                 kills[3]))
+                        embed.add_field(name="General", value="Items Crafted: {}\n"
+                                                              "Resources Harvested: {}\n"
+                                                              "Experience Gained: {}\n"
+                                                              "Items Crafted: {}\n"
+                                                              "Fish Caught: {}\n"
+                                                              "Plants Grown: {}\n"
+                                                              "Objects Built: {}\n"
+                                                              "Projectiles Thrown: {}"
+                                                              "".format(founds[0], founds[1], founds[2], founds[3],
+                                                                        founds[4], founds[5], founds[6], founds[7]))
+
+                        embed.add_field(name="Traveled", value="By Foot: {}m\n"
+                                                               "By Vehicle: {}m".format(travel[0], travel[1]))
+
+                        embed.add_field(name="Weapon Usage", value="Shots: {}\n"
+                                                                   "Hits: {}\n"
+                                                                   "Headshots: {}"
+                                                                   "".format(acc[0], acc[1], acc[2]))
+
+                        embed.add_field(name="Arena", value="Wins: {}".format(a_wins))
+
+                        embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
+
+                        try:
+                            await self.bot.say(embed=embed)
+                        except discord.HTTPException:
+                            await self.bot.say("I need the `Embed links` permission "
+                                               "to send this")
+
+            except Exception as e:
+                log.warn("Error in unturned command: ", e)
+                await self.bot.say("Error: Issue occurred whilst getting Unturned Stats")
+
+
+    "Unturned":
+    {
+        "Kills": [
+            "Zombies_Normal", "Players", "Zombies_Mega", "Animals"
+        ]
+        ,
+        "Found": [
+            "Items", "Resources", "Experience", "Crafts", "Fishes", "Plants",
+            "Buildables", "Throwables"
+        ],
+        "Travel": [
+            "Foot", "Vehicle"
+        ],
+        "WeaponUsage": [
+            "Accuracy_Shot", "Accuracy_Hit", "Headshots"
+        ],
+        "#Sources": ["https://steamdb.info/app/304930/stats/"]
+    },
+
+
+
+
+
+import json  # import bs4  # import requests # import aiohttp  # import asyncio
+
+# id_file = "helpers/steam_id.json"
+pd2_file = "helpers/pd2_info.json"
+unturned_file = "helpers/unturned.json"
+csgo_file = "helpers/csgo.json"
+
+file = "helpers/games.json"
+
+"""
+For reading the .json containing stat info
+"""
+
+
+def steam_read(data, stat_name):
+    jdata = json.loads(data)
+    stats = len(jdata['playerstats']['stats'])
+
+    for index in range(stats):
+        if jdata['playerstats']['stats'][index]['name'] == stat_name:
+            return jdata['playerstats']['stats'][index]['value']
+    print("No result found for {}. Counting as zero.".format(stat_name))
+    return 0
+
+
+def csgo_info():
+    with open(file) as out_file2:
+        data = json.load(out_file2)
+        game_data = data["CSGO"]
+
+    return game_data  # game_data['Kills'], game_data['Maps']
+
+
+def read_startswith(data, startswith, game):
+    jdata = json.loads(data)
+
+    game_data = jdata
+
+    result = []
+
+    """
+    if game == "pd2":
+        with open(pd2_file) as out_file2:
+            game_data = json.load(out_file2)
+
+    elif game == "unturned":
+        with open(unturned_file) as out_file2:
+            game_data = json.load(out_file2)
+
+    elif game == "csgo":
+        with open(csgo_file) as out_file2:
+            game_data = json.load(out_file2)
+    """
+
+    if game == "pd2":
+        if startswith == "enemy_kills_":
+            to_find = game_data['PD2']['Kills']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "difficulty_":
+            to_find = game_data['PD2']['Difficulty']
+            result = stat_loop(jdata, to_find, startswith)
+
+    elif game == "unturned":
+        if startswith == "Kills_":
+            to_find = game_data['Unturned']['Kills']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "Found_":
+            to_find = game_data['Unturned']['Found']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "Travel_":
+            to_find = game_data['Unturned']['Travel']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "":
+            to_find = game_data['Unturned']['WeaponUsage']
+            result = stat_loop(jdata, to_find, startswith)
+
+    elif game == "csgo":
+        if startswith == "total_kills_":
+            to_find = game_data['Kills']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "":
+            to_find = game_data['General Stats']
+            result = stat_loop(jdata, to_find, startswith)
+        if startswith == "total_wins_map_":
+            to_find = game_data['Maps']
+            result = stat_loop(jdata, to_find, startswith)
+
+    return result
+
+
+def stat_loop(jdata, to_find, startswith):
+    result = []
+    loops = len(to_find)
+    i_loops = len(jdata['playerstats']['stats'])
+    for index in range(loops):
+        for i_index in range(i_loops):
+            if jdata['playerstats']['stats'][i_index]['name'] == "{}{}".format(startswith, to_find[index]):
+                result.append(jdata['playerstats']['stats'][i_index]['value'])
+                break
+            if i_index == i_loops - 1:
+                result.append(0)
+    # print(result)
+    return result
+
+
+def weapon_read(data):
+    # http://wiki.modworkshop.net/Payday_2/Weapon_IDs
+    jdata = json.loads(data)
+
+    with open(pd2_file) as out_file3:
+        pd2_data = json.load(out_file3)
+
+    stats = len(jdata['playerstats']['stats'])
+    # achievements = len(jdata['playerstats']['achievements'])
+    # weapons = len(pd2_data)
+
+    highest_kills = 0
+    highest_gun = ""
+
+    for index in range(stats):
+        if str(jdata['playerstats']['stats'][index]['name']).startswith('weapon_kills_'):
+            if int(jdata['playerstats']['stats'][index]['value']) > highest_kills:
+                highest_kills = int(jdata['playerstats']['stats'][index]['value'])
+                highest_gun = str(jdata['playerstats']['stats'][index]['name'])
+    try:
+        if pd2_data['Weapons'][highest_gun]:
+            highest_gun = pd2_data['Weapons'][highest_gun]
+    except KeyError as e:
+        highest_gun = ""
+
+    if highest_gun == "" or highest_kills == 0:
+        return "N/A", "N/A"
+    else:
+        return highest_gun, highest_kills
+
+
+def armor_read(data):
+    jdata = json.loads(data)
+
+    with open(pd2_file) as out_file4:
+        pd2_data = json.load(out_file4)
+
+    stats = len(jdata['playerstats']['stats'])
+
+    highest = 0
+    highest_armor = ""
+
+    for index in range(stats):
+        # print("arm: {}, use: {}".format(highest_armor, highest))
+        if str(jdata['playerstats']['stats'][index]['name']).startswith('armor_used_level_'):
+            if int(jdata['playerstats']['stats'][index]['value']) > highest:
+                highest = int(jdata['playerstats']['stats'][index]['value'])
+                highest_armor = str(jdata['playerstats']['stats'][index]['name'])
+
+    if pd2_data['Armor'][highest_armor]:
+        highest_armor = pd2_data['Armor'][highest_armor]
+
+    if highest_armor == "" or highest == 0:
+        return "N/A", "N/A"
+    else:
+        return highest_armor, highest
+
+
+def gadget_read(data):
+    jdata = json.loads(data)
+
+    with open(pd2_file) as out_file5:
+        pd2_data = json.load(out_file5)
+
+    stats = len(jdata['playerstats']['stats'])
+
+    highest = 0
+    highest_gadget = ""
+
+    for index in range(stats):
+        # print("arm: {}, use: {}".format(highest_gadget, highest))
+        if str(jdata['playerstats']['stats'][index]['name']).startswith('gadget_used_'):
+            if int(jdata['playerstats']['stats'][index]['value']) > highest:
+                highest = int(jdata['playerstats']['stats'][index]['value'])
+                highest_gadget = str(jdata['playerstats']['stats'][index]['name'])
+
+    if pd2_data['Gadget'][highest_gadget]:
+        highest_gadget = pd2_data['Gadget'][highest_gadget]
+
+    if highest_gadget == "" or highest == 0:
+        return "N/A", "N/A"
+    else:
+        return highest_gadget, highest
 
 
 

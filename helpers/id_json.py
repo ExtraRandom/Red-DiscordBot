@@ -9,7 +9,7 @@ def read(user, platform):
         try:
             return data[user][platform]
         except KeyError as e:
-            print("ID Read KeyError: {}".format(e))
+            print("ID Read KeyError: {} for Platform {}".format(e, platform))
             return 0
 
 

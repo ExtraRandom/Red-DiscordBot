@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from helpers import tokens as t, id_json, steam_json  # , bnet_json
+from helpers import tokens as t, id_json, games_json
 
 import aiohttp
 from discord.ext import commands
@@ -247,6 +247,7 @@ class Games:
         user_id = parse_user(ctx.message)
         steam_id = id_json.read(user_id, self.s)
         username = await steam_from_id(steam_id)
+
         if user_id is not None:
             user = "<@" + user_id + ">"
         else:
@@ -256,7 +257,7 @@ class Games:
             return
 
         if steam_id == 0:
-            await self.bot.say("Error: User {} has no Steam ID associated to them. {} plz fix!".format(user_id,
+            await self.bot.say("Error: User {} has no Steam ID associated to them. {} plz fix!".format(user,
                                                                                                        self.er_id))
             return
 
@@ -265,21 +266,32 @@ class Games:
                 link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=218620&key={}" \
                        "&steamid={}&format=json" \
                        "".format(t.web_api, steam_id)
+                # print("link ", link)
 
                 with aiohttp.ClientSession() as session:
                     async with session.get(link)as resp:
                         data = await resp.text()  # resp.json()
 
+                        stats = json.loads(data)['playerstats']['stats']
+
                         try:
-                            heist_s = steam_json.steam_read(data, "heist_success")
+                            heist_s = games_json.find_stat("heist_success", stats)
                         except KeyError:
                             await self.bot.say("Error: User {} ({} on Steam) does not own Payday 2".format(user,
                                                                                                            username))
                             return
-                        heist_f = steam_json.steam_read(data, "heist_failed")
 
-                        kills = steam_json.read_startswith(data, "enemy_kills_", "pd2")
-                        diffs = steam_json.read_startswith(data, "difficulty_", "pd2")
+                        if heist_s == -1:
+                            await self.bot.say("Error occurred whilst reading PD2 stats. (Code 1)")
+                            print("PD2ERROR")
+                            return
+
+                        heist_f = games_json.find_stat("heist_failed", stats)
+                        kills = games_json.get_stats("pd2", "kills", stats)
+                        diffs = games_json.get_stats("pd2", "diffs", stats)
+
+                        most_used_gun, most_used_kills, most_used_gadget, most_used_gadget_uses,\
+                            most_used_armor, most_used_armor_uses = games_json.item_stats(stats)
 
                         fbi = kills[1] + kills[2] + kills[3]
                         cop_swat = kills[0] + kills[29] + kills[7] + kills[6] + kills[5]
@@ -297,47 +309,43 @@ class Games:
                         other_kills = total_kills - (fbi + cop_swat + tank_kills + gang_mob_kills + civ_kills +
                                                      kills_cloaker + kills_shield + kills_sniper)
 
-                        most_used_gun, most_used_kills = steam_json.weapon_read(data)
-
-                        most_used_gadget, most_used_gadget_uses = steam_json.gadget_read(data)
-                        most_used_armor, most_used_armor_uses = steam_json.armor_read(data)
-
                         embed = discord.Embed(title="PD2 Stats for " + username,
-                                              colour=discord.Colour.blue(),
-                                              url="http://pd2stats.com/profiles/" + user_id)
+                                              colour=discord.Colour.blue())
+                        # ,url="http://pd2stats.com/profiles/" + user_id)
+                        # That website no longer seems to work :/
 
-                        embed.add_field(name="Heists", value="{} Completed"
-                                                             "\n{} Failed"
+                        embed.add_field(name="Heists", value="**Completed:** {}\n"
+                                                             "**Failed:** {}"
                                                              "".format(heist_s, heist_f))
 
-                        embed.add_field(name="Difficulty", value="{} Normal\n"
-                                                                 "{} Hard\n"
-                                                                 "{} Very Hard\n"
-                                                                 "{} Overkill\n"
-                                                                 "{} Mayhem\n"
-                                                                 "{} Deathwish\n"
-                                                                 "{} One Down"
+                        embed.add_field(name="Difficulty", value="**Normal:** {}\n"
+                                                                 "**Hard:** {}\n"
+                                                                 "**Very Hard:** {}\n"
+                                                                 "**Overkill:** {}\n"
+                                                                 "**Mayhem:** {}\n"
+                                                                 "**Deathwish:** {}\n"
+                                                                 "**One Down:** {}"
                                                                  "".format(diffs[0], diffs[1], diffs[2], diffs[3]
                                                                            , diffs[5], diffs[4], diffs[6]))
 
-                        embed.add_field(name="Kills", value="{} FBI\n"
-                                                            "{} Cops/SWAT\n"
-                                                            "{} Shield\n"
-                                                            "{} Sniper\n"
-                                                            "{} Cloaker\n"
-                                                            "{} Bulldozer\n"
-                                                            "{} Gang/Mob\n"
-                                                            "{} Civilian\n"
-                                                            "{} Other"
+                        embed.add_field(name="Kills", value="**FBI:** {}\n"
+                                                            "**Cops/SWAT:** {}\n"
+                                                            "**Shield:** {}\n"
+                                                            "**Sniper:** {}\n"
+                                                            "**Cloaker:** {}\n"
+                                                            "**Bulldozer:** {}\n"
+                                                            "**Gang/Mob:** {}\n"
+                                                            "**Civilian:** {}\n"
+                                                            "**Other:** {}"
                                                             "".format(fbi, cop_swat, kills_shield, kills_sniper,
                                                                       kills_cloaker, tank_kills, gang_mob_kills,
                                                                       civ_kills, other_kills))
                         embed.add_field(name="Favourite Gun",
-                                        value="{}\n{} kills".format(most_used_gun, most_used_kills))
+                                        value="**{}**\n{} kills".format(most_used_gun, most_used_kills))
                         embed.add_field(name="Favourite Gadget",
-                                        value="{}\n{} uses".format(most_used_gadget, most_used_gadget_uses))
+                                        value="**{}**\n{} uses".format(most_used_gadget, most_used_gadget_uses))
                         embed.add_field(name="Favourite Armor",
-                                        value="{}\n{} uses".format(most_used_armor, most_used_armor_uses))
+                                        value="**{}**\n{} uses".format(most_used_armor, most_used_armor_uses))
 
                         embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
@@ -384,35 +392,39 @@ class Games:
                 with aiohttp.ClientSession() as session:
                     async with session.get(link)as resp:
                         data = await resp.text()  # resp.json()
+                        # print(link)
+                        stats = json.loads(data)['playerstats']['stats']
 
-                        kills = steam_json.read_startswith(data, "total_kills_", "csgo")
-                        general = steam_json.read_startswith(data, "", "csgo")
-                        mapwins = steam_json.read_startswith(data, "total_wins_map_", "csgo")
+                        kills = games_json.get_stats("csgo", "kills", stats)
+                        mapwins = games_json.get_stats("csgo", "maps", stats)
+                        general = games_json.get_stats("csgo", "general", stats)
+                        headshots = games_json.find_stat("total_kills_headshot", stats)
+
+                        gdata = games_json.read_json_for_game("CSGO")
+
                         kd_ratio = general[0] / general[1]
                         kd_ratio = str(kd_ratio)[:4]
 
                         top_guns = get_top5(kills)
                         top_maps = get_top5(mapwins)
 
-                        gdata = steam_json.csgo_info()
-
                         embed = discord.Embed(title="CS:GO Stats for {}".format(username),
                                               colour=discord.Colour.dark_green())
 
-                        embed.add_field(name="General", value="Total Kills: {}\n"
-                                                              "Total Deaths: {}\n"
-                                                              "K/D Ratio: {}\n"
-                                                              "Bombs Planted: {}\n"
-                                                              "Bombs Defused: {}\n"
-                                                              "Hostages Rescued: {}"
+                        embed.add_field(name="General", value="**Total Kills:** {}\n"
+                                                              "**Total Deaths:** {}\n"
+                                                              "**K/D Ratio:** {}\n"
+                                                              "**Bombs Planted:** {}\n"
+                                                              "**Bombs Defused:** {}\n"
+                                                              "**Hostages Rescued:** {}"
                                                               "".format(general[0], general[1], kd_ratio,
                                                                         general[2], general[3], general[4]))
 
-                        embed.add_field(name="Top Guns", value="1: {} - {} kills\n"
-                                                               "2: {} - {} kills\n"
-                                                               "3: {} - {} kills\n"
-                                                               "4: {} - {} kills\n"
-                                                               "5: {} - {} kills\n"
+                        embed.add_field(name="Top Guns", value="**1:** {} - {} kills\n"
+                                                               "**2:** {} - {} kills\n"
+                                                               "**3:** {} - {} kills\n"
+                                                               "**4:** {} - {} kills\n"
+                                                               "**5:** {} - {} kills\n"
                                                                "".format(str(gdata['Kills'][top_guns[0]]).upper(),
                                                                          kills[top_guns[0]],
                                                                          str(gdata['Kills'][top_guns[1]]).upper(),
@@ -425,11 +437,11 @@ class Games:
                                                                          kills[top_guns[4]]
                                                                          ))
 
-                        embed.add_field(name="Top Maps", value="1: {} - {} wins\n"
-                                                               "2: {} - {} wins\n"
-                                                               "3: {} - {} wins\n"
-                                                               "4: {} - {} wins\n"
-                                                               "5: {} - {} wins\n"
+                        embed.add_field(name="Top Maps", value="**1:** {} - {} wins\n"
+                                                               "**2:** {} - {} wins\n"
+                                                               "**3:** {} - {} wins\n"
+                                                               "**4:** {} - {} wins\n"
+                                                               "**5:** {} - {} wins\n"
                                                                "".format(str(gdata['Maps'][top_maps[0]]).split("_")[1]
                                                                          .capitalize(), mapwins[top_maps[0]],
                                                                          str(gdata['Maps'][top_maps[1]]).split("_")[1]
@@ -442,11 +454,12 @@ class Games:
                                                                          .capitalize(), mapwins[top_maps[4]]))
 
                         percent = (general[5] / general[6]) * 100
-                        embed.add_field(name="Accuracy", value="Shots Hit: {}\n"
-                                                               "Shots Fired: {}\n"
-                                                               "Accuracy Percent: {}%"
+                        embed.add_field(name="Accuracy", value="**Shots Hit:** {}\n"
+                                                               "**Shots Fired:** {}\n"
+                                                               "**Accuracy Percent:** {}%\n"
+                                                               "**Headshots:** {}"
                                                                "".format(general[5], general[6],
-                                                                         str(percent).split(".")[0]))
+                                                                         str(percent).split(".")[0], headshots))
 
                         embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
@@ -458,89 +471,7 @@ class Games:
             except KeyError as e:
                 await self.bot.say("Error: User {} ({} on Steam) does not own CS:GO.".format(user,
                                                                                              username))
-
-    @commands.command(pass_context=True)
-    async def unturned(self, ctx):
-        """Get Unturned Stats, Mention someone to get their stats
-        E.g. "?unturned" for personal stats, "?unturned @SomeUser" for SomeUser's stats
-        """
-        print(ctx.message.content)
-        user_id = parse_user(ctx.message)
-        steam_id = id_json.read(user_id, self.s)
-        username = await steam_from_id(steam_id)
-        if user_id is not None:
-            user = "<@" + user_id + ">"
-        else:
-            await self.bot.say("Error: '{}' is not a user. Try mentioning the desired user to get their stats"
-                               ", or only type the command without anything following it you get your own stats."
-                               "".format(" ".join(ctx.message.content.split(" ")[1:])))
-            return
-
-        if steam_id == 0:
-            await self.bot.say("Error: User {} has no Steam ID associated to them.".format(user))
-            return
-
-        if not t.web_api == "":
-            try:
-                link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=304930&key={}" \
-                       "&steamid={}&format=json" \
-                       "".format(t.web_api, steam_id)
-
-                with aiohttp.ClientSession() as session:
-                    async with session.get(link)as resp:
-                        data = await resp.text()
-
-                        try:
-                            kills = steam_json.read_startswith(data, "Kills_", "unturned")
-                        except Exception as e:
-                            await self.bot.say("Error: User {} ({} on Steam) does not own CS:GO.".format(user,
-                                                                                                         username))
-                            return
-                        founds = steam_json.read_startswith(data, "Found_", "unturned")
-                        travel = steam_json.read_startswith(data, "Travel_", "unturned")
-                        acc = steam_json.read_startswith(data, "", "unturned")
-                        a_wins = steam_json.steam_read(data, "Arena_Wins")
-
-                        embed = discord.Embed(title="Unturned Stats for " + username,
-                                              colour=discord.Colour.green())
-
-                        embed.add_field(name="Kills", value="Players: {}\n"
-                                                            "Zombies: {}\n"
-                                                            "Mega Zombies: {}\n"
-                                                            "Animals: {}".format(kills[0], kills[1], kills[2],
-                                                                                 kills[3]))
-                        embed.add_field(name="General", value="Items Crafted: {}\n"
-                                                              "Resources Harvested: {}\n"
-                                                              "Experience Gained: {}\n"
-                                                              "Items Crafted: {}\n"
-                                                              "Fish Caught: {}\n"
-                                                              "Plants Grown: {}\n"
-                                                              "Objects Built: {}\n"
-                                                              "Projectiles Thrown: {}"
-                                                              "".format(founds[0], founds[1], founds[2], founds[3],
-                                                                        founds[4], founds[5], founds[6], founds[7]))
-
-                        embed.add_field(name="Traveled", value="By Foot: {}m\n"
-                                                               "By Vehicle: {}m".format(travel[0], travel[1]))
-
-                        embed.add_field(name="Weapon Usage", value="Shots: {}\n"
-                                                                   "Hits: {}\n"
-                                                                   "Headshots: {}"
-                                                                   "".format(acc[0], acc[1], acc[2]))
-
-                        embed.add_field(name="Arena", value="Wins: {}".format(a_wins))
-
-                        embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
-
-                        try:
-                            await self.bot.say(embed=embed)
-                        except discord.HTTPException:
-                            await self.bot.say("I need the `Embed links` permission "
-                                               "to send this")
-
-            except Exception as e:
-                log.warn("Error in unturned command: ", e)
-                await self.bot.say("Error: Issue occurred whilst getting Unturned Stats")
+                log.warn("Key Error: {}".format(e))
 
     @commands.command(pass_context=True)
     async def overwatch(self, ctx, battletag_or_discord="myself", region="eu"):
@@ -795,7 +726,7 @@ class Games:
         """
         # Some code from https://github.com/jgayfer/spirit/blob/master/cogs/destiny.py
 
-        # TODO allow for something like "?d2 2" (will think you're changing battletag)
+        # TODO allow for something like "?d2 2" (will think you're changing battletag atm)
 
         if battletag_or_discord == "myself":
             battletag_or_discord = ctx.message.author.id
