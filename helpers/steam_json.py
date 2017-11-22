@@ -9,7 +9,7 @@ csgo_file = "helpers/csgo.json"
 For reading and writing to steam_id.json
 """
 
-
+"""
 def read(user):
     with open(id_file) as data_file:
         data = json.load(data_file)
@@ -20,7 +20,7 @@ def read(user):
         except KeyError as e:
             print("Steam - KeyError: {}".format(e))
             return 0
-
+"""
 # Move to code dump some when
 """
 def write(user_discord, user_steamid):

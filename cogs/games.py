@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from helpers import tokens as t, steam_json, bnet_json
+from helpers import tokens as t, id_json, steam_json  # , bnet_json
 
 import aiohttp
 from discord.ext import commands
@@ -27,6 +27,8 @@ class Games:
         # self.url_base = "https://www.bungie.net/Platform"
         self.img_base = "https://www.bungie.net"
         self.er_id = "<@92562410493202432>"
+        self.s = "Steam"
+        self.b = "BattleNet"
 
     @commands.command(name="mc")
     async def minecraft_ip(self, ip: str):
@@ -243,7 +245,7 @@ class Games:
         """
         run = True
         user_id = parse_user(ctx.message)
-        steam_id = steam_json.read(user_id)
+        steam_id = id_json.read(user_id, self.s)
         username = await steam_from_id(steam_id)
         if user_id is not None:
             user = "<@" + user_id + ">"
@@ -359,7 +361,7 @@ class Games:
         E.g. "?csgo" for personal stats, "?csgo @SomeUser" for SomeUser's stats
         """
         user_id = parse_user(ctx.message)
-        steam_id = steam_json.read(user_id)
+        steam_id = id_json.read(user_id, self.s)
         username = await steam_from_id(steam_id)
         if user_id is not None:
             user = "<@" + user_id + ">"
@@ -464,7 +466,7 @@ class Games:
         """
         print(ctx.message.content)
         user_id = parse_user(ctx.message)
-        steam_id = steam_json.read(user_id)
+        steam_id = id_json.read(user_id, self.s)
         username = await steam_from_id(steam_id)
         if user_id is not None:
             user = "<@" + user_id + ">"
@@ -610,10 +612,10 @@ class Games:
                     avatar = stats['overall_stats']['avatar']
 
                     # used to be ['average_stats']
-                    death_avg = int(stats['game_stats']['deaths'])  #_avg']
-                    elims_avg = int(stats['game_stats']['eliminations'])  #_avg']
-                    heals_avg = int(stats['game_stats']['healing_done'])  #_avg']
-                    objks_avg = int(stats['game_stats']['objective_kills'])  #_avg']
+                    death_avg = int(stats['game_stats']['deaths'])
+                    elims_avg = int(stats['game_stats']['eliminations'])
+                    heals_avg = int(stats['game_stats']['healing_done'])
+                    objks_avg = int(stats['game_stats']['objective_kills'])
 
                     md_total = int(stats['game_stats']['medals'])
                     md_gold = int(stats['game_stats']['medals_gold'])
@@ -631,7 +633,7 @@ class Games:
                                           description="Quickplay Stats")
                     embed.set_thumbnail(url=avatar)
 
-                    embed.add_field(name="General", value="Time Played: {}\n"
+                    embed.add_field(name="General", value="Time Played: {} hours\n"
                                                           "Level: {}\n"
                                                           "Wins: {}"
                                                           "".format(time_played, level_final, wins))
@@ -793,6 +795,8 @@ class Games:
         """
         # Some code from https://github.com/jgayfer/spirit/blob/master/cogs/destiny.py
 
+        # TODO allow for something like "?d2 2" (will think you're changing battletag)
+
         if battletag_or_discord == "myself":
             battletag_or_discord = ctx.message.author.id
 
@@ -929,12 +933,27 @@ class Games:
 
         destiny.close()
 
+    @commands.command(pass_context=True, hidden=True)
+    async def check_id(self, ctx, user="self"):
+
+        if user == "self":
+            user = ctx.message.author.id
+        user = user.replace("<@", "").replace("!", "").replace(">", "")
+        await self.bot.say("{} Associated ID's are:\n**Steam** - {}  -  **BattleNet** - {}"
+                           "\n*(A value of '0' means there is no ID's associated)*".format(ctx.message.author,
+                                                                                         id_json.read(
+                                                                                              user, "Steam"),
+                                                                                         id_json.read(
+                                                                                              user, "BattleNet")
+                                                                                          )
+                           )
+
 
 def battle_net_parse_user(name):
     if name.startswith("<@") is True:
         # So its a Discord tag
         name = name.replace("<@", "").replace(">", "").replace("!","")
-        bnet = bnet_json.read(name)
+        bnet = id_json.read(name, "BattleNet")
         if bnet == 0:
             return 1
 
@@ -943,7 +962,7 @@ def battle_net_parse_user(name):
         bnet = name
     else:
         # Check its not an already formatted id (i.e. if myself was used on d2 command)
-        check_list = bnet_json.read(name)
+        check_list = id_json.read(name, "BattleNet")
         if check_list != 0:
             return check_list
         return 0
