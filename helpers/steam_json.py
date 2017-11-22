@@ -13,12 +13,12 @@ For reading and writing to steam_id.json
 def read(user):
     with open(id_file) as data_file:
         data = json.load(data_file)
-        # TODO see if checking whether the user has the game or not can be done here
+        # TODO see if checking whether the user has the game or not can/should be done here
         try:
             # print("read user '", user, "' for info :", data[user])
             return data[user]
         except KeyError as e:
-            print("KeyError: {}".format(e))
+            print("Steam - KeyError: {}".format(e))
             return 0
 
 # Move to code dump some when

@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from helpers import tokens as t, steam_json  # , bnet_json
+from helpers import tokens as t, steam_json, bnet_json
 
 import aiohttp
 from discord.ext import commands
@@ -540,15 +540,30 @@ class Games:
                 log.warn("Error in unturned command: ", e)
                 await self.bot.say("Error: Issue occurred whilst getting Unturned Stats")
 
-    @commands.command()
-    async def overwatch(self, battletag: str, region="eu"):
-        """Get Overwatch Stats - Regions are 'eu', 'us' and 'kr'
-        Default Region is EU"""
+    @commands.command(pass_context=True)
+    async def overwatch(self, ctx, battletag_or_discord="myself", region="eu"):
+        """Get Overwatch Stats
+
+        Defaults to yourself if no one else is specified (this'll require your battletag to be on the list)
+        Default Region is EU - Other Regions are 'eu', 'us' and 'kr'"""
 
         # Updated to use https://github.com/SunDwarf/OWAPI/blob/master/api.md
         # https://owapi.net/api/v3/u/ExtraRandom-2501/blob?format=json_pretty
 
         # TODO add competitive stats
+
+        if battletag_or_discord == "myself":
+            battletag_or_discord = ctx.message.author.id
+
+        battletag = battle_net_parse_user(battletag_or_discord)
+        if battletag == 0:
+            await self.bot.say("'{}' is not a BattleTag or Discord Mention.".format(battletag_or_discord))
+            return
+        elif battletag == 1:
+            await self.bot.say("User '{}' has no associated BattleTag. Tell {} to add it to the list! Until it is added"
+                               " type their battletag instead. (i.e. ?overwatch ExtraRandom#2501)."
+                               "".format(battletag_or_discord, self.er_id))
+            return
 
         msg = await self.bot.say("Fetching Stats for {}".format(battletag))
 
@@ -577,6 +592,14 @@ class Games:
             with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get(link)as resp:
                     data = await resp.json()
+
+                    try:
+                        error = data['error']
+                        await self.bot.edit_message(msg, "User '{}' does not own Overwatch. If this is incorrect, "
+                                                         "please check your spelling.".format(battletag_or_discord))
+                        return
+                    except KeyError:
+                        pass
 
                     stats = data[reg]['stats']['quickplay']
 
@@ -639,7 +662,7 @@ class Games:
                                    "to send this")
                 # TODO repeat this on other commands
         else:
-            await self.bot.say("Error: Couldn't fetch stats, check spelling and try again.")
+            await self.bot.say("Error: Couldn't fetch Overwatch stats, check spelling and try again.")
 
     @commands.command()
     async def pubg(self, bg_name: str, region="eu"):
@@ -760,20 +783,27 @@ class Games:
             await self.bot.edit_message(msg, "Error occurred whilst getting data. Try again later.\nReason from Server:"
                                              " {}".format(reason))
 
-    @commands.command()
-    async def d2(self, bnet: str, character=1):
+    @commands.command(pass_context=True)
+    async def d2(self, ctx, battletag_or_discord="myself", character=1):
         """
         Get Destiny 2 Stats and Equipped Items
 
+        Defaults to yourself if no one else is specified (this'll require your battletag to be on the list)
         Defaults to character 1 if no character is specified
         """
         # Some code from https://github.com/jgayfer/spirit/blob/master/cogs/destiny.py
 
-        # TODO error catching
+        if battletag_or_discord == "myself":
+            battletag_or_discord = ctx.message.author.id
 
-        if len(bnet.split("#")) == 1:
-            await self.bot.say("'{}' is not a BattleTag. An example of a correct battletag is ExtraRandom#2501."
-                               "".format(bnet))
+        bnet = battle_net_parse_user(battletag_or_discord)
+        if bnet == 0:
+            await self.bot.say("'{}' is not a BattleTag or Discord Mention.".format(battletag_or_discord))
+            return
+        elif bnet == 1:
+            await self.bot.say("User '{}' has no associated BattleTag. Tell {} to add it to the list! Until it is added"
+                               " type their battletag instead. (i.e. ?d2 ExtraRandom#2501)."
+                               "".format(battletag_or_discord, self.er_id))
             return
 
         destiny = pydest.Pydest(t.d2_api)
@@ -808,92 +838,116 @@ class Games:
             await self.bot.say("Error getting Guardian Stats (Code: 3)")
             return
 
-        char_data = profile_data['Response']['characters']['data'][char_id]
+        try:
+            char_data = profile_data['Response']['characters']['data'][char_id]
 
-        role_dict = await destiny.decode_hash(char_data['classHash'], 'DestinyClassDefinition')
-        role = role_dict['displayProperties']['name']
+            role_dict = await destiny.decode_hash(char_data['classHash'], 'DestinyClassDefinition')
+            role = role_dict['displayProperties']['name']
 
-        gender_dict = await destiny.decode_hash(char_data['genderHash'], 'DestinyGenderDefinition')
-        gender = gender_dict['displayProperties']['name']
+            gender_dict = await destiny.decode_hash(char_data['genderHash'], 'DestinyGenderDefinition')
+            gender = gender_dict['displayProperties']['name']
 
-        race_dict = await destiny.decode_hash(char_data['raceHash'], 'DestinyRaceDefinition')
-        race = race_dict['displayProperties']['name']
+            race_dict = await destiny.decode_hash(char_data['raceHash'], 'DestinyRaceDefinition')
+            race = race_dict['displayProperties']['name']
 
-        level = char_data['levelProgression']['level']
-        light = char_data['light']
+            level = char_data['levelProgression']['level']
+            light = char_data['light']
 
-        avatar = self.img_base + char_data['emblemPath']
+            avatar = self.img_base + char_data['emblemPath']
 
-        mins_played = int(char_data['minutesPlayedTotal'])
-        time_played = mins_played / 60
+            mins_played = int(char_data['minutesPlayedTotal'])
+            time_played = mins_played / 60
 
-        equipped = profile_data['Response']['characterEquipment']['data'][char_id]['items']
+            equipped = profile_data['Response']['characterEquipment']['data'][char_id]['items']
 
-        weapon_i = 0
-        armour_i = 0
+            weapon_i = 0
+            armour_i = 0
 
-        weapons = []
-        armours = []
+            weapons = []
+            armours = []
 
-        for item in equipped:
+            for item in equipped:
 
-            item_dict = await destiny.decode_hash(item['itemHash'], 'DestinyInventoryItemDefinition')
-            item_name = item_dict['displayProperties']['name']
+                item_dict = await destiny.decode_hash(item['itemHash'], 'DestinyInventoryItemDefinition')
+                item_name = item_dict['displayProperties']['name']
 
-            if weapon_i < 3:
-                weapons.append(item_name)
-                weapon_i += 1
+                if weapon_i < 3:
+                    weapons.append(item_name)
+                    weapon_i += 1
 
-            elif armour_i < 5:
-                armours.append(item_name)
-                armour_i += 1
+                elif armour_i < 5:
+                    armours.append(item_name)
+                    armour_i += 1
 
-        stat_hashs = char_data['stats']
+            stat_hashs = char_data['stats']
 
-        s_recovery = -1
-        s_resilience = -1
-        s_mobility = -1
+            s_recovery = -1
+            s_resilience = -1
+            s_mobility = -1
 
-        for stat in stat_hashs:
-            stat_dict = await destiny.decode_hash(stat, 'DestinyStatDefinition')  # print(stat, stat_dict)
-            try:
-                if stat_dict['displayProperties']['name'] == "Recovery":
-                    s_recovery = stat_hashs[stat]
-                elif stat_dict['displayProperties']['name'] == "Mobility":
-                    s_mobility = stat_hashs[stat]
-                elif stat_dict['displayProperties']['name'] == "Resilience":
-                    s_resilience = stat_hashs[stat]
+            for stat in stat_hashs:
+                stat_dict = await destiny.decode_hash(stat, 'DestinyStatDefinition')  # print(stat, stat_dict)
+                try:
+                    if stat_dict['displayProperties']['name'] == "Recovery":
+                        s_recovery = stat_hashs[stat]
+                    elif stat_dict['displayProperties']['name'] == "Mobility":
+                        s_mobility = stat_hashs[stat]
+                    elif stat_dict['displayProperties']['name'] == "Resilience":
+                        s_resilience = stat_hashs[stat]
 
-                if s_mobility > -1 and s_recovery > -1 and s_resilience > -1:
-                    break
+                    if s_mobility > -1 and s_recovery > -1 and s_resilience > -1:
+                        break
 
-            except KeyError:
-                pass
+                except KeyError:
+                    pass
 
-        embed = discord.Embed(colour=discord.Colour.blue())
-        embed.set_author(name=bnet.replace("%23", "#"), icon_url="https://i.imgur.com/NF5PVtL.png")
-        embed.set_thumbnail(url=avatar)
-        embed.description = "Level {} {} {} {} |" \
-                            ":small_blue_diamond:{}\n" \
-                            "{} Mobility - {} Resilience - {} Recovery" \
-                            "".format(level, race, gender, role, light,
-                                      s_mobility, s_resilience, s_recovery)
-        embed.add_field(name="Weapons", value="**Kinetic:** {}\n"
-                                              "**Energy:** {}\n"
-                                              "**Power:** {}"
-                                              "".format(weapons[0], weapons[1], weapons[2]))
-        embed.add_field(name="Armour", value="**Helmet:** {}\n"
-                                             "**Gauntlets:** {}\n"
-                                             "**Chest:** {}\n"
-                                             "**Legs:** {}\n"
-                                             "**Class Item:** {}"
-                                             "".format(armours[0], armours[1], armours[2], armours[3], armours[4]))
-        embed.add_field(name="Other Stats", value="**Time Played:** {} hours"
-                                                  "".format(round(time_played, 2)))
+            embed = discord.Embed(colour=discord.Colour.blue())
+            embed.set_author(name=bnet.replace("%23", "#"), icon_url="https://i.imgur.com/NF5PVtL.png")
+            embed.set_thumbnail(url=avatar)
+            embed.description = "Level {} {} {} {} |" \
+                                ":small_blue_diamond:{}\n" \
+                                "{} Mobility - {} Resilience - {} Recovery" \
+                                "".format(level, race, gender, role, light,
+                                          s_mobility, s_resilience, s_recovery)
+            embed.add_field(name="Weapons", value="**Kinetic:** {}\n"
+                                                  "**Energy:** {}\n"
+                                                  "**Power:** {}"
+                                                  "".format(weapons[0], weapons[1], weapons[2]))
+            embed.add_field(name="Armour", value="**Helmet:** {}\n"
+                                                 "**Gauntlets:** {}\n"
+                                                 "**Chest:** {}\n"
+                                                 "**Legs:** {}\n"
+                                                 "**Class Item:** {}"
+                                                 "".format(armours[0], armours[1], armours[2], armours[3], armours[4]))
+            embed.add_field(name="Other Stats", value="**Time Played:** {} hours"
+                                                      "".format(round(time_played, 2)))
 
-        await self.bot.say(embed=embed)
+            await self.bot.say(embed=embed)
+        except Exception as e:
+            log.warn("D2 command Error: ", e)
+            await self.bot.say("Error getting Guardian Stats (Code: 4)")
 
         destiny.close()
+
+
+def battle_net_parse_user(name):
+    if name.startswith("<@") is True:
+        # So its a Discord tag
+        name = name.replace("<@", "").replace(">", "").replace("!","")
+        bnet = bnet_json.read(name)
+        if bnet == 0:
+            return 1
+
+    elif len(name.split("#")) == 2:
+        # It be a battle tag
+        bnet = name
+    else:
+        # Check its not an already formatted id (i.e. if myself was used on d2 command)
+        check_list = bnet_json.read(name)
+        if check_list != 0:
+            return check_list
+        return 0
+    return bnet
 
 
 def parse_user(msg):
@@ -901,7 +955,6 @@ def parse_user(msg):
     inp = msg.content
     check_other = inp.split(" ")  # print("CHECK OTHER IS: ", check_other)
     try:
-
         user_id = check_other[1]
         if user_id.startswith("<@"):
             user_id = user_id.replace("<", "").replace("@", "").replace(">", "").replace("!", "")
@@ -911,6 +964,7 @@ def parse_user(msg):
         user_id = user
 
     return user_id
+
 
 async def steam_from_id(s_id: int):
     try:
