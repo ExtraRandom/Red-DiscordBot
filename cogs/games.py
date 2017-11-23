@@ -556,7 +556,14 @@ class Games:
                     comp_death = int(comp_stats['game_stats']['deaths'])
                     comp_elims = int(comp_stats['game_stats']['eliminations'])
                     comp_heals = int(comp_stats['game_stats']['healing_done'])
-                    comp_objks = int(comp_stats['game_stats']['objective_kills'])
+                    try:
+                        comp_objks = int(comp_stats['game_stats']['objective_kills'])
+                    except KeyError:
+                        comp_objks = int(comp_stats['game_stats']['objective_kill'])
+                    # TODO apparently if you only have one of a stat it misses the s so will need to
+                    # TODO add a new function to loop through stats and miss the s if an key error occurs
+                    # TODO so that it still gets the stat, though this is a rather minor issue atm
+
 
                     qp_md_total = int(stats['game_stats']['medals'])
                     qp_md_gold = int(stats['game_stats']['medals_gold'])
@@ -582,9 +589,10 @@ class Games:
                                                           "**Level:** {}\n"
                                                           "**Quick Play Wins:** {}\n"
                                                           "**Competitive Wins:** {}\n"
+                                                          "**Competitive Games:** {}\n"
                                                           "**Competitive Tier:** {}"
                                                           "".format(time_played, level_final, qp_wins, comp_wins,
-                                                                    comp_tier))
+                                                                    comp_played, comp_tier))
 
                     embed.add_field(name="Quick Play Totals", value="**Eliminations:** {}\n"
                                                                     "**Deaths:** {}\n"
