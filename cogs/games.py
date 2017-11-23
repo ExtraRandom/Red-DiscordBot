@@ -553,27 +553,20 @@ class Games:
                     qp_heals = int(stats['game_stats']['healing_done'])
                     qp_objks = int(stats['game_stats']['objective_kills'])
 
-                    comp_death = int(comp_stats['game_stats']['deaths'])
-                    comp_elims = int(comp_stats['game_stats']['eliminations'])
-                    comp_heals = int(comp_stats['game_stats']['healing_done'])
-                    try:
-                        comp_objks = int(comp_stats['game_stats']['objective_kills'])
-                    except KeyError:
-                        comp_objks = int(comp_stats['game_stats']['objective_kill'])
-                    # TODO apparently if you only have one of a stat it misses the s so will need to
-                    # TODO add a new function to loop through stats and miss the s if an key error occurs
-                    # TODO so that it still gets the stat, though this is a rather minor issue atm
-
+                    comp_death = get_ow_stat("deaths", comp_stats)  # int(comp_stats['game_stats']['deaths'])
+                    comp_elims = get_ow_stat("eliminations", comp_stats) # int(comp_stats['game_stats']['eliminations'])
+                    comp_heals = get_ow_stat("healing_done", comp_stats) # int(comp_stats['game_stats']['healing_done'])
+                    comp_objks = get_ow_stat("objective_kills", comp_stats)  # int(comp_stats['game_stats']['objective_kills'])
 
                     qp_md_total = int(stats['game_stats']['medals'])
                     qp_md_gold = int(stats['game_stats']['medals_gold'])
                     qp_md_silver = int(stats['game_stats']['medals_silver'])
                     qp_md_bronze = int(stats['game_stats']['medals_bronze'])
 
-                    comp_md_total = int(comp_stats['game_stats']['medals'])
-                    comp_md_gold = int(comp_stats['game_stats']['medals_gold'])
-                    comp_md_silver = int(comp_stats['game_stats']['medals_silver'])
-                    comp_md_bronze = int(comp_stats['game_stats']['medals_bronze'])
+                    comp_md_total = get_ow_stat("medals", comp_stats)  # int(comp_stats['game_stats']['medals'])
+                    comp_md_gold = get_ow_stat("medals_gold", comp_stats) # int(comp_stats['game_stats']['medals_gold'])
+                    comp_md_silver = get_ow_stat("medals_silver", comp_stats)  # int(comp_stats['game_stats']['medals_silver'])
+                    comp_md_bronze = get_ow_stat("medals_bronze", comp_stats)  # int(comp_stats['game_stats']['medals_bronze'])
 
                     if prestige >= 1:
                         level_final = str(prestige) + "-" + str(level)
@@ -972,6 +965,22 @@ async def steam_from_id(s_id: int):
     except Exception as e:
         # log.warn("Error getting steam name from id: {}".format(e))
         return None
+
+
+def get_ow_stat(stat_name, stats):
+    try:
+        value = stats['game_stats'][stat_name]
+        return int(value)
+    except KeyError:
+        try:
+            if stat_name == "medals_silver":
+                value = stats['game_stats']["medal_silver"]
+            else:
+                value = stats['game_stats'][stat_name.replace("s", "")]
+
+            return int(value)
+        except KeyError:
+            return 0
 
 
 def pubg_filter(data, number):
