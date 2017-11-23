@@ -193,36 +193,36 @@ class Games:
                     if games_730 == 1: games_730 = "Online"
                     else: games_730 = "Down"
 
-                    embed.add_field(name="Steam", value="Client: {}\n"
-                                                        "Community: {}, {}\n"
-                                                        "Store: {}, {}\n"
-                                                        "User: {}, {}\n".format(client, community, community_error,
+                    embed.add_field(name="Steam", value="**Client:** {}\n"
+                                                        "**Community:** {}, {}\n"
+                                                        "**Store:** {}, {}\n"
+                                                        "**User:** {}, {}\n".format(client, community, community_error,
                                                                                 store, store_error, user, user_error))
 
-                    embed.add_field(name="Team Fortress 2", value="Items: {}, {}\n"
-                                                                  "Games: {}, {}".format(items_440, items_440_error,
+                    embed.add_field(name="Team Fortress 2", value="**Items:** {}, {}\n"
+                                                                  "**Games:** {}, {}".format(items_440, items_440_error,
                                                                                          games_440, games_440_error))
 
-                    embed.add_field(name="Dota 2", value="Items: {}, {}\n"
-                                                         "Games: {}, {}\n"
-                                                         "Players Searching: {}".format(items_570, items_570_error,
+                    embed.add_field(name="Dota 2", value="**Items:** {}, {}\n"
+                                                         "**Games:** {}, {}\n"
+                                                         "**Players Searching:** {}".format(items_570, items_570_error,
                                                                                         games_570, games_570_error,
                                                                                         games_570_searching))
                     try:
-                        embed.add_field(name="CS:GO", value="Items: {}, {}\n"
-                                                            "Games: {}, {}\n"
-                                                            "Players Online: {}\n"
-                                                            "Players Searching: {}\n"
-                                                            "Ongoing Matches: {}\n"
-                                                            "Average Wait: {}".format(items_730, items_730_error,
+                        embed.add_field(name="CS:GO", value="**Items:** {}, {}\n"
+                                                            "**Games:** {}, {}\n"
+                                                            "**Players Online:** {}\n"
+                                                            "**Players Searching:** {}\n"
+                                                            "**Ongoing Matches:** {}\n"
+                                                            "**Average Wait:** {}".format(items_730, items_730_error,
                                                                                       games_730, games_730_error,
                                                                                       games_730_players,
                                                                                       games_730_searching,
                                                                                       games_730_matches,
                                                                                       games_730_wait))
                     except Exception as e:
-                        embed.add_field(name="CS:GO", value="Items: {}, {}\n"
-                                                            "Games: {}, {}\n"
+                        embed.add_field(name="CS:GO", value="**Items:** {}, {}\n"
+                                                            "**Games:** {}, {}\n"
                                                             "".format(items_730, items_730_error, games_730,
                                                                       games_730_error))
 
@@ -480,10 +480,8 @@ class Games:
         Defaults to yourself if no one else is specified (this'll require your battletag to be on the list)
         Default Region is EU - Other Regions are 'eu', 'us' and 'kr'"""
 
-        # Updated to use https://github.com/SunDwarf/OWAPI/blob/master/api.md
+        # Uses https://github.com/SunDwarf/OWAPI/blob/master/api.md
         # https://owapi.net/api/v3/u/ExtraRandom-2501/blob?format=json_pretty
-
-        # TODO add competitive stats
 
         if battletag_or_discord == "myself":
             battletag_or_discord = ctx.message.author.id
@@ -520,7 +518,7 @@ class Games:
             headers = {
                 'User-Agent': 'DiscordBot'
             }
-            link = "https://owapi.net/api/v3/u/{}/stats?format=json_pretty".format(user)
+            link = "https://owapi.net/api/v3/u/{}/stats?format=json_pretty".format(user)  # print(link)
 
             with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get(link)as resp:
@@ -535,25 +533,41 @@ class Games:
                         pass
 
                     stats = data[reg]['stats']['quickplay']
+                    comp_stats = data[reg]['stats']['competitive']
 
-                    time_played = int(stats['game_stats']['time_played'])
+                    qp_time = int(stats['game_stats']['time_played'])
+                    comp_time = int(comp_stats['game_stats']['time_played'])
+                    time_played = qp_time + comp_time
+
                     level = stats['overall_stats']['level']
                     prestige = stats['overall_stats']['prestige']
-                    wins = stats['overall_stats']['wins']
                     avatar = stats['overall_stats']['avatar']
 
-                    # used to be ['average_stats']
-                    death_avg = int(stats['game_stats']['deaths'])
-                    elims_avg = int(stats['game_stats']['eliminations'])
-                    heals_avg = int(stats['game_stats']['healing_done'])
-                    objks_avg = int(stats['game_stats']['objective_kills'])
+                    qp_wins = stats['overall_stats']['wins']
+                    comp_wins = comp_stats['overall_stats']['wins']
+                    comp_played = comp_stats['overall_stats']['games']
+                    comp_tier = str(comp_stats['overall_stats']['tier']).capitalize()
 
-                    md_total = int(stats['game_stats']['medals'])
-                    md_gold = int(stats['game_stats']['medals_gold'])
-                    md_silver = int(stats['game_stats']['medals_silver'])
-                    md_bronze = int(stats['game_stats']['medals_bronze'])
+                    qp_death = int(stats['game_stats']['deaths'])
+                    qp_elims = int(stats['game_stats']['eliminations'])
+                    qp_heals = int(stats['game_stats']['healing_done'])
+                    qp_objks = int(stats['game_stats']['objective_kills'])
 
-                    # level_final = prestige + " " + level
+                    comp_death = int(comp_stats['game_stats']['deaths'])
+                    comp_elims = int(comp_stats['game_stats']['eliminations'])
+                    comp_heals = int(comp_stats['game_stats']['healing_done'])
+                    comp_objks = int(comp_stats['game_stats']['objective_kills'])
+
+                    qp_md_total = int(stats['game_stats']['medals'])
+                    qp_md_gold = int(stats['game_stats']['medals_gold'])
+                    qp_md_silver = int(stats['game_stats']['medals_silver'])
+                    qp_md_bronze = int(stats['game_stats']['medals_bronze'])
+
+                    comp_md_total = int(comp_stats['game_stats']['medals'])
+                    comp_md_gold = int(comp_stats['game_stats']['medals_gold'])
+                    comp_md_silver = int(comp_stats['game_stats']['medals_silver'])
+                    comp_md_bronze = int(comp_stats['game_stats']['medals_bronze'])
+
                     if prestige >= 1:
                         level_final = str(prestige) + "-" + str(level)
                     else:
@@ -561,25 +575,44 @@ class Games:
 
                     embed = discord.Embed(title="Overwatch Stats for {}".format(battletag),
                                           colour=discord.Colour.orange(),
-                                          description="Quickplay Stats")
+                                          description="Does NOT include Arcade Stats (QP + Comp only)")
                     embed.set_thumbnail(url=avatar)
 
-                    embed.add_field(name="General", value="Time Played: {} hours\n"
-                                                          "Level: {}\n"
-                                                          "Wins: {}"
-                                                          "".format(time_played, level_final, wins))
+                    embed.add_field(name="General", value="**Time Played:** {} hours\n"
+                                                          "**Level:** {}\n"
+                                                          "**Quick Play Wins:** {}\n"
+                                                          "**Competitive Wins:** {}\n"
+                                                          "**Competitive Tier:** {}"
+                                                          "".format(time_played, level_final, qp_wins, comp_wins,
+                                                                    comp_tier))
 
-                    embed.add_field(name="Totals", value="Eliminations: {}\n"
-                                                         "Deaths: {}\n"
-                                                         "Healing Done: {}\n"
-                                                         "Objective Kills: {}"
-                                                         "".format(elims_avg, death_avg, heals_avg, objks_avg))
+                    embed.add_field(name="Quick Play Totals", value="**Eliminations:** {}\n"
+                                                                    "**Deaths:** {}\n"
+                                                                    "**Healing Done:** {}\n"
+                                                                    "**Objective Kills:** {}"
+                                                                    "".format(qp_elims, qp_death,
+                                                                              qp_heals, qp_objks))
 
-                    embed.add_field(name="Medals", value="Total: {}\n"
-                                                         "Gold: {}\n"
-                                                         "Silver: {}\n"
-                                                         "Bronze: {}\n"
-                                                         "".format(md_total, md_gold, md_silver, md_bronze))
+                    embed.add_field(name="Quick Play Medals", value="**Total:** {}\n"
+                                                                    "**Gold:** {}\n"
+                                                                    "**Silver:** {}\n"
+                                                                    "**Bronze:** {}\n"
+                                                                    "".format(qp_md_total, qp_md_gold,
+                                                                              qp_md_silver, qp_md_bronze))
+
+                    embed.add_field(name="Competitive Totals", value="**Eliminations:** {}\n"
+                                                                     "**Deaths:** {}\n"
+                                                                     "**Healing Done:** {}\n"
+                                                                     "**Objective Kills:** {}"
+                                                                     "".format(comp_elims, comp_death,
+                                                                               comp_heals, comp_objks))
+
+                    embed.add_field(name="Competitive Medals", value="**Total:** {}\n"
+                                                                     "**Gold:** {}\n"
+                                                                     "**Silver:** {}\n"
+                                                                     "**Bronze:** {}\n"
+                                                                     "".format(comp_md_total, comp_md_gold,
+                                                                               comp_md_silver, comp_md_bronze))
 
                     embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
 
@@ -606,6 +639,7 @@ class Games:
         Regions: AS, NA, SEA, EU, OC, SA, All
         """
 
+        # TODO redo formatting maybe remove some stats that just make it messy
         # TODO error catch - if user enters a name that doesnt exist
 
         msg = await self.bot.say("Fetching PUBG Stats for {}".format(bg_name))
@@ -866,17 +900,17 @@ class Games:
 
     @commands.command(pass_context=True, hidden=True)
     async def check_id(self, ctx, user="self"):
-
         if user == "self":
             user = ctx.message.author.id
+        tag = user
         user = user.replace("<@", "").replace("!", "").replace(">", "")
         await self.bot.say("{} Associated ID's are:\n**Steam** - {}  -  **BattleNet** - {}"
-                           "\n*(A value of '0' means there is no ID's associated)*".format(ctx.message.author,
-                                                                                         id_json.read(
+                           "\n*(A value of '0' means there is no ID's associated)*".format(tag,
+                                                                                           id_json.read(
                                                                                               user, "Steam"),
-                                                                                         id_json.read(
+                                                                                           id_json.read(
                                                                                               user, "BattleNet")
-                                                                                          )
+                                                                                           )
                            )
 
 
