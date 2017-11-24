@@ -522,7 +522,13 @@ class Games:
 
             with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get(link)as resp:
-                    data = await resp.json()
+                    try:
+                        data = await resp.json()
+                    except aiohttp.client_exceptions.ContentTypeError:
+                        await self.bot.edit_message(msg, "An error occurred whilst getting Overwatch Stat's. "
+                                                         "Try again later. If error persists make sure Overwatch/"
+                                                         "Blizzard Servers aren't down.")
+                        return
 
                     try:
                         error = data['error']
