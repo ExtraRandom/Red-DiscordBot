@@ -643,7 +643,7 @@ class Games:
 
         Region is Optional Argument, Defaults to EU
 
-        Regions: AS, NA, SEA, EU, OC, SA, All
+        Regions: AS, NA, SEA, EU, OC, SA, KRJP, All
         """
 
         # TODO redo formatting maybe remove some stats that just make it messy

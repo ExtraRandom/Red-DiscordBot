@@ -1,6 +1,23 @@
 web_api = ""
-yt_api = ""
-pubg_api = ""
-d2_api = ""
+"""
+http://steamcommunity.com/dev/apikey
+You will need to be signed in
+"""
 
-# TODO provide links/info on where to get these api keys
+yt_api = ""
+"""
+Currently not used - Likely won't be any time soon either
+"""
+
+pubg_api = ""
+"""
+https://pubgtracker.com/site-api
+Login and then Generate API Key
+"""
+
+d2_api = ""
+"""
+
+"""
+
+# TODO Remember to update these if anything changes

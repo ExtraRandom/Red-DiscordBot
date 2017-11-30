@@ -7,6 +7,7 @@
     "cogs.games" : true,
     "cogs.general" : true,
     "cogs.image" : false,
+    "cogs.misc" : true,
     "cogs.mod" : false,
     "cogs.streams" : false,
     "cogs.trivia" : false

@@ -12,7 +12,7 @@ def read(user, platform):
             print("ID Read KeyError: {} for Platform {}".format(e, platform))
             return 0
 
-
+# TODO add a (working) write function (preferably tested using a copy of the current ids.json)
 
 
 
