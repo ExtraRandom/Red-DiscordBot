@@ -48,8 +48,8 @@ class Misc:
         500 MegaBytes (MB) = 0.5 GigaBytes (GB)
         """
 
-        speeds = {'1MB/s': 8, '2.5MB/s': 20, '3MB/s': 24, '4MB/s': 32}
-        order = ['1MB/s', '2.5MB/s', '3MB/s', '4MB/s']
+        speeds = {'1MB/s': 8, '2MB/s': 16, '3MB/s': 24, '4MB/s': 32}
+        order = ['1MB/s', '2MB/s', '3MB/s', '4MB/s']
 
         embed = discord.Embed(title="Download Times for {} GigaBytes (GB)".format(size_in_gigabytes),
                               colour=discord.Colour.dark_green(),
@@ -58,9 +58,16 @@ class Misc:
             if i in speeds:
                 value = (((1048576 * size_in_gigabytes) * 1024) * 8) / (speeds[i]*1000000)
                 if 3599 < value < 7199:
-                    fmt_value = time.strftime('%H hour %M minutes', time.gmtime(value))
-                elif value > 7199:
-                    fmt_value = time.strftime('%H hours %M minutes', time.gmtime(value))
+                    fmt_value = time.strftime('%H hour, %M minutes', time.gmtime(value))
+                elif 7199 < value < 86399:
+                    fmt_value = time.strftime('%H hours, %M minutes', time.gmtime(value))
+                elif 86399 < value < 14399:
+                    fmt_value = time.strftime('{} Day, %H hours, %M minutes'.format(secs_to_days(value)),
+                                              time.gmtime(value))
+                elif value > 14399:
+                    fmt_value = time.strftime('{} Days, %H hours, %M minutes'.format(secs_to_days(value)),
+                                              time.gmtime(value))
+                    embed.set_footer(text="What on earth are you downloading?")
                 else:
                     fmt_value = time.strftime('%M minutes', time.gmtime(value))
 
@@ -69,6 +76,9 @@ class Misc:
 
         await self.bot.say(embed=embed)
 
+
+def secs_to_days(seconds):
+    return str(seconds / 86400).split(".")[0]
 
 def setup(bot):
     bot.add_cog(Misc(bot))
