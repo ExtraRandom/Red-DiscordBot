@@ -42,12 +42,12 @@ class Misc:
         await self.bot.say(embed=embed)
 
     @commands.command()
-    async def dltime(self, size_in_gigabytes: int):
+    async def dltime(self, size_in_gigabytes: float):
         """See how long it'll take to download a given file size (in GB's)
 
         500 MegaBytes (MB) = 0.5 GigaBytes (GB)
         """
-
+        # size_in_gigabytes = float(size_in_gigabytes)
         speeds = {'1MB/s': 8, '2MB/s': 16, '3MB/s': 24, '4MB/s': 32}
         order = ['1MB/s', '2MB/s', '3MB/s', '4MB/s']
 
@@ -61,11 +61,8 @@ class Misc:
                     fmt_value = time.strftime('%H hour, %M minutes', time.gmtime(value))
                 elif 7199 < value < 86399:
                     fmt_value = time.strftime('%H hours, %M minutes', time.gmtime(value))
-                elif 86399 < value < 14399:
-                    fmt_value = time.strftime('{} Day, %H hours, %M minutes'.format(secs_to_days(value)),
-                                              time.gmtime(value))
-                elif value > 14399:
-                    fmt_value = time.strftime('{} Days, %H hours, %M minutes'.format(secs_to_days(value)),
+                elif 86399 < value:
+                    fmt_value = time.strftime('{} Day(s), %H hours, %M minutes'.format(secs_to_days(value)),
                                               time.gmtime(value))
                     embed.set_footer(text="What on earth are you downloading?")
                 else:
