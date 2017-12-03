@@ -875,6 +875,10 @@ class Games:
                 except KeyError:
                     pass
 
+            if s_resilience == -1: s_resilience = 0
+            if s_recovery == -1: s_recovery = 0
+            if s_mobility == -1: s_mobility = 0
+
             embed = discord.Embed(colour=discord.Colour.blue())
             embed.set_author(name=bnet.replace("%23", "#"), icon_url="https://i.imgur.com/NF5PVtL.png")
             embed.set_thumbnail(url=avatar)
