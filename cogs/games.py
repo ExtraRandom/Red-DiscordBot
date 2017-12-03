@@ -680,21 +680,22 @@ class Games:
         try:
             if data['error']:
                 working = False
-                reason = data['error']
+                reason = data['message']
         except KeyError:
             pass
 
         if working:
             season = data['seasonDisplay']
+            filter_season = data['defaultSeason']
             avatar = data['Avatar']
             properName = data['PlayerName']
             update_time = str(data['LastUpdated'])
             last_updated = update_time.split(".")[0].replace("T", " ")
             site_link = "https://pubgtracker.com/profile/pc/{}?region={}".format(properName, region)
 
-            solo_n = pubg_find("solo", region, data)
-            duo_n = pubg_find("duo", region, data)
-            squad_n = pubg_find("squad", region, data)
+            solo_n = pubg_find("solo", region, data, filter_season)
+            duo_n = pubg_find("duo", region, data, filter_season)
+            squad_n = pubg_find("squad", region, data, filter_season)
 
             embed = discord.Embed(title="{} PUBG Stats for {}".format(region.upper(), properName),
                                   description=season,
@@ -704,30 +705,28 @@ class Games:
             if solo_n is not None:
                 solo_data = pubg_filter(data, solo_n)
                 embed.add_field(name="Solo",
-                                value="Kill Death Ratio: {}\n"
-                                      "Kills: {}\n"
-                                      "Played: {}\n"
-                                      "Wins: {}\n"
-                                      "Rank: {}\n"
-                                      "Rank %: Top {}%\n"
-                                      "Top 10's: {}"
+                                value="**Kill Death Ratio:** {}\n"
+                                      "**Kills:** {}\n"
+                                      "**Played:** {}\n"
+                                      "**Wins:** {}\n"
+                                      "**Rank:** {}\n"
+                                      "**Top 10's:** {}"
                                       "".format(solo_data[0], solo_data[1], solo_data[2], solo_data[3], solo_data[4],
-                                                solo_data[5], solo_data[6]))
+                                                solo_data[5]))
             else:
                 embed.add_field(name="Solo", value="No Data for Solo Matches")
 
             if duo_n is not None:
                 duo_data = pubg_filter(data, duo_n)
                 embed.add_field(name="Duo",
-                                value="Kill Death Ratio: {}\n"
-                                      "Kills: {}\n"
-                                      "Played: {}\n"
-                                      "Wins: {}\n"
-                                      "Rank: {}\n"
-                                      "Rank %: Top {}%\n"
-                                      "Top 10's: {}"
+                                value="**Kill Death Ratio:** {}\n"
+                                      "**Kills:** {}\n"
+                                      "**Played:** {}\n"
+                                      "**Wins:** {}\n"
+                                      "**Rank:** {}\n"
+                                      "**Top 10's:** {}"
                                       "".format(duo_data[0], duo_data[1], duo_data[2], duo_data[3], duo_data[4],
-                                                duo_data[5], duo_data[6]))
+                                                duo_data[5]))
             else:
                 embed.add_field(name="Duo", value="No Data for Duo Matches")
 
@@ -735,15 +734,14 @@ class Games:
                 squad_data = pubg_filter(data, squad_n)
 
                 embed.add_field(name="Squad",
-                                value="Kill Death Ratio: {}\n"
-                                      "Kills: {}\n"
-                                      "Played: {}\n"
-                                      "Wins: {}\n"
-                                      "Rank: {}\n"
-                                      "Rank %: Top {}%\n"
-                                      "Top 10's: {}"
+                                value="**Kill Death Ratio:** {}\n"
+                                      "**Kills:** {}\n"
+                                      "**Played:** {}\n"
+                                      "**Wins:** {}\n"
+                                      "**Rank:** {}\n"
+                                      "**Top 10's:** {}"
                                       "".format(squad_data[0], squad_data[1], squad_data[2], squad_data[3],
-                                                squad_data[4], squad_data[5], squad_data[6]))
+                                                squad_data[4], squad_data[5]))
             else:
                 embed.add_field(name="Squad", value="No Data for Squad Matches")
 
@@ -754,8 +752,8 @@ class Games:
             await self.bot.say(embed=embed)
 
         else:  # if not working
-            await self.bot.edit_message(msg, "Error occurred whilst getting data. Try again later.\nReason from Server:"
-                                             " {}".format(reason))
+            await self.bot.edit_message(msg, "Error occurred whilst getting data. Check for typos or try again later."
+                                             "\nReason from Server: {}".format(reason))
 
     @commands.command(pass_context=True)
     async def d2(self, ctx, battletag_or_discord="myself", character=1):
@@ -1007,7 +1005,7 @@ def pubg_filter(data, number):
     Rounds = None
     Wins = None
     Rating = None
-    RatingPercent = None
+    # RatingPercent = None
     Top10s = None
 
     loops = len(data['Stats'][number]['Stats'])
@@ -1027,16 +1025,17 @@ def pubg_filter(data, number):
                 Top10s = data['Stats'][number]['Stats'][i]['value']
             elif item == "Rating":
                 Rating = data['Stats'][number]['Stats'][i]['rank']
-                RatingPercent = data['Stats'][number]['Stats'][i]['percentile']
+                # RatingPercent = data['Stats'][number]['Stats'][i]['percentile']
 
-    return [KDR, Kills, Rounds, Wins, Rating, RatingPercent, Top10s]
+    return [KDR, Kills, Rounds, Wins, Rating, Top10s]  # RatingPercent, was 2nd to last
 
 
-def pubg_find(mode, region, data):
+def pubg_find(mode, region, data, season):
     """
     :param mode: solo, duo or squad
     :param region: eu, na, as, sa, sea, oc, agg
     :param data: the data to find the stuff from
+    :param season: the season to get data from
     :return:
     """
     # modes = ["solo", "duo", "squad"]
@@ -1049,8 +1048,9 @@ def pubg_find(mode, region, data):
     for i in range(0, loops):
         if data['Stats'][i]['Region'] == region:
             if data['Stats'][i]['Match'] == mode:
-                result = i
-                break
+                if data['Stats'][i]['Season'] == season:
+                    result = i
+                    break
     return result
 
 
