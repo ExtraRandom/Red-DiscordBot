@@ -4,6 +4,9 @@ from datetime import datetime
 from pytz import timezone
 import time
 
+# TODO remove when no longer needed
+import requests, bs4
+
 
 class Misc:
     def __init__(self, bot):
@@ -72,6 +75,31 @@ class Misc:
                                 value="{}".format(fmt_value))
 
         await self.bot.say(embed=embed)
+
+    @commands.command(aliases=["hb", "yogshb"], hidden=True)
+    async def yogs(self):
+        # TODO remove once this bundle ends
+        try:
+            url = "https://www.humblebundle.com/yogscast-jingle-jam-2017"
+            res = requests.get(url)
+
+            res.raise_for_status()
+
+            html = bs4.BeautifulSoup(res.text, "html.parser")
+            games = html.select('em')
+
+            msg = "**GAMES:**"
+
+            for game in games:
+                msg += "\n  " \
+                       "{}".format(game.getText())
+
+            await self.bot.say(msg)
+
+        except Exception as e:
+            print("Error in yogs command: {}".format(e))
+            await self.bot.say("Error getting data.")
+            return
 
 
 def secs_to_days(seconds):
