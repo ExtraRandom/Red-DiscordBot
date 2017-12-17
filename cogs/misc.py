@@ -3,6 +3,7 @@ import discord  # import requests # import json # import aiohttp
 from datetime import datetime
 from pytz import timezone
 import time
+from cogs.utils import checks
 
 # TODO remove when no longer needed
 import requests, bs4
@@ -100,6 +101,70 @@ class Misc:
             print("Error in yogs command: {}".format(e))
             await self.bot.say("Error getting data.")
             return
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def where_who(self):
+        """Admin Only Command"""
+        servers = self.bot.servers
+
+        embed = discord.Embed(title="Title",
+                              colour=discord.Colour.darker_grey(),
+                              description="Hello")
+
+        for server in servers:
+            name = server.name
+
+            users = server.members
+            user_msg = ""
+
+            for user in users:
+                user_msg += "{}\n".format(user.name)
+
+            embed.add_field(name="{}".format(name),
+                            value="{}".format(user_msg))
+
+        await self.bot.say(embed=embed)
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def channels(self):
+        """Admin Only Command"""
+        servers = self.bot.servers
+
+        embed = discord.Embed(title="Title",
+                              colour=discord.Colour.darker_grey(),
+                              description="Hello")
+
+        for server in servers:
+            name = server.name
+
+            channels = server.channels
+            chan_msg = ""
+
+            for chan in channels:
+                chan_msg += "{} - {}\n".format(chan.name, chan.id)
+
+            embed.add_field(name="{}".format(name),
+                            value="{}".format(chan_msg))
+
+        await self.bot.say(embed=embed)
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def text_log(self, channel: str, limit: int):
+        """Admin Only Command"""
+        msgs = ""
+        i = 0
+        async for msg in self.bot.logs_from(self.bot.get_channel(channel), limit):
+            i += 1
+            msgs += "{} - {} - {}\n".format(i, msg.clean_content, msg.author)
+            if i % 20 == 0:
+                await self.bot.say(msgs)
+                msgs = ""
+
+        if msgs != "":
+            await self.bot.say(msgs)
 
 
 def secs_to_days(seconds):
