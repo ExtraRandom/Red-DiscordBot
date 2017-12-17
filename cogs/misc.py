@@ -102,13 +102,13 @@ class Misc:
             await self.bot.say("Error getting data.")
             return
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=["who_where", "ww"])
     @checks.is_owner()
     async def where_who(self):
         """Admin Only Command"""
         servers = self.bot.servers
 
-        embed = discord.Embed(title="Title",
+        embed = discord.Embed(title="List of servers I am in and people in them",
                               colour=discord.Colour.darker_grey(),
                               description="Hello")
 
@@ -132,9 +132,9 @@ class Misc:
         """Admin Only Command"""
         servers = self.bot.servers
 
-        embed = discord.Embed(title="Title",
+        embed = discord.Embed(title="Channels that I am in",
                               colour=discord.Colour.darker_grey(),
-                              description="Hello")
+                              description="Channels")
 
         for server in servers:
             name = server.name
@@ -143,7 +143,7 @@ class Misc:
             chan_msg = ""
 
             for chan in channels:
-                chan_msg += "{} - {}\n".format(chan.name, chan.id)
+                chan_msg += "{} - {} - {}\n".format(chan.name, chan.type, chan.id)
 
             embed.add_field(name="{}".format(name),
                             value="{}".format(chan_msg))
@@ -154,17 +154,27 @@ class Misc:
     @checks.is_owner()
     async def text_log(self, channel: str, limit: int):
         """Admin Only Command"""
-        msgs = ""
-        i = 0
-        async for msg in self.bot.logs_from(self.bot.get_channel(channel), limit):
-            i += 1
-            msgs += "{} - {} - {}\n".format(i, msg.clean_content, msg.author)
-            if i % 20 == 0:
-                await self.bot.say(msgs)
-                msgs = ""
+        try:
+            ignore_list = ["181177004085739520", "378608361727328267"]
+            msgs = ""
+            i = 0
+            async for msg in self.bot.logs_from(self.bot.get_channel(channel), limit):
+                i += 1
+                if msg.author.id in ignore_list:
+                    msgs += "{} - Ignored Author\n".format(i)
+                else:
+                    msgs += "{} - {} - {} - {}\n".format(i, msg.clean_content, msg.author,
+                                                         str(msg.timestamp).split(".")[0])
 
-        if msgs != "":
-            await self.bot.say(msgs)
+                if i % 20 == 0:
+                    await self.bot.say(msgs)
+                    msgs = ""
+
+            if msgs != "":
+                await self.bot.say(msgs)
+
+        except Exception as e:
+            await self.bot.say("Error [{}]: {}".format(type(e), e))
 
 
 def secs_to_days(seconds):
