@@ -102,7 +102,7 @@ class Misc:
             await self.bot.say("Error getting data.")
             return
 
-    @commands.command(hidden=True, aliases=["who_where", "ww"])
+    @commands.command(hidden=True, aliases=["who_where", "ww", "who"])
     @checks.is_owner()
     async def where_who(self):
         """Admin Only Command"""
@@ -126,7 +126,7 @@ class Misc:
 
         await self.bot.say(embed=embed)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=["chans", "chan", "channel"])
     @checks.is_owner()
     async def channels(self):
         """Admin Only Command"""
@@ -150,10 +150,12 @@ class Misc:
 
         await self.bot.say(embed=embed)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=["tlog", "t_log", "log"])
     @checks.is_owner()
-    async def text_log(self, channel: str, limit: int):
+    async def text_log(self, channel: str, limit=10):
         """Admin Only Command"""
+        # TODO add better link detection so they don't embed
+
         try:
             ignore_list = ["181177004085739520", "378608361727328267"]
             msgs = ""
@@ -163,7 +165,9 @@ class Misc:
                 if msg.author.id in ignore_list:
                     msgs += "{} - Ignored Author\n".format(i)
                 else:
-                    msgs += "{} - {} - {} - {}\n".format(i, msg.clean_content, msg.author,
+                    msg_content = msg.clean_content
+                    msg_content = msg_content.replace("https://", "").replace("http://", "")  # link detect. to replace
+                    msgs += "{} - {} - {} - {}\n".format(i, msg_content, msg.author,
                                                          str(msg.timestamp).split(".")[0])
 
                 if i % 20 == 0:
@@ -172,7 +176,6 @@ class Misc:
 
             if msgs != "":
                 await self.bot.say(msgs)
-
         except Exception as e:
             await self.bot.say("Error [{}]: {}".format(type(e), e))
 

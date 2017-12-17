@@ -16,6 +16,7 @@ import json
 from re import sub
 import pydest
 
+from cogs.utils import checks
 
 loop = asyncio.get_event_loop()
 log = logging.getLogger(__name__)
@@ -908,7 +909,9 @@ class Games:
         destiny.close()
 
     @commands.command(pass_context=True, hidden=True)
+    @checks.is_owner()
     async def check_id(self, ctx, user="self"):
+        """Admin Only Command"""
         if user == "self":
             user = ctx.message.author.id
         tag = user
