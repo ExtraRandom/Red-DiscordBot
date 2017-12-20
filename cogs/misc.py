@@ -80,27 +80,7 @@ class Misc:
     @commands.command(aliases=["hb", "yogshb"], hidden=True)
     async def yogs(self):
         # TODO remove once this bundle ends
-        try:
-            url = "https://www.humblebundle.com/yogscast-jingle-jam-2017"
-            res = requests.get(url)
-
-            res.raise_for_status()
-
-            html = bs4.BeautifulSoup(res.text, "html.parser")
-            games = html.select('em')
-
-            msg = "**GAMES:**"
-
-            for game in games:
-                msg += "\n  " \
-                       "{}".format(game.getText())
-
-            await self.bot.say(msg)
-
-        except Exception as e:
-            print("Error in yogs command: {}".format(e))
-            await self.bot.say("Error getting data.")
-            return
+        await self.bot.say("<https://www.humblebundle.com/yogscast-jingle-jam-2017>")
 
     @commands.command(hidden=True, aliases=["who_where", "ww", "who"])
     @checks.is_owner()
@@ -137,7 +117,7 @@ class Misc:
                               description="Channels")
 
         for server in servers:
-            name = server.name
+            name = "{} - {}".format(server.name, server.id)
 
             channels = server.channels
             chan_msg = ""
