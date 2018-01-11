@@ -77,11 +77,6 @@ class Misc:
 
         await self.bot.say(embed=embed)
 
-    @commands.command(aliases=["hb", "yogshb"], hidden=True)
-    async def yogs(self):
-        # TODO remove once this bundle ends
-        await self.bot.say("<https://www.humblebundle.com/yogscast-jingle-jam-2017>")
-
     @commands.command(hidden=True, aliases=["who_where", "ww", "who"])
     @checks.is_owner()
     async def where_who(self):
