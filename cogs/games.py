@@ -655,7 +655,7 @@ class Games:
         region = region.lower()
 
         key = t.pubg_api
-        url_base = "https://pubgtracker.com/api/profile/pc/"
+        url_base = "https://api.pubgtracker.com/v2/profile/pc/"
         url = "{}{}".format(url_base, bg_name)
         headers = {
             'content-type': "application/json",
@@ -672,17 +672,19 @@ class Games:
         reason = ""
 
         try:
-            if data['message']:
+            if "message" in data:
                 working = False
                 reason = data['message']
         except KeyError:
+            reason += "Error in PUBG Command (Debug Code: 1) "
             pass
 
         try:
-            if data['error']:
+            if "error" in data:
                 working = False
-                reason = data['message']
+                reason = data['error']
         except KeyError:
+            reason += "Error in PUBG Command (Debug Code: 2) "
             pass
 
         if working:
@@ -754,7 +756,7 @@ class Games:
 
         else:  # if not working
             await self.bot.edit_message(msg, "Error occurred whilst getting data. Check for typos or try again later."
-                                             "\nReason from Server: {}".format(reason))
+                                             "\nReason: {}".format(reason))
 
     @commands.command(pass_context=True)
     async def d2(self, ctx, battletag_or_discord="myself", character=1):
