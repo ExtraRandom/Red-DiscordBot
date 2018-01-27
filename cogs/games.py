@@ -25,7 +25,6 @@ log = logging.getLogger(__name__)
 class Games:
     def __init__(self, bot):
         self.bot = bot
-        # self.url_base = "https://www.bungie.net/Platform"
         self.img_base = "https://www.bungie.net"
         self.er_id = "<@92562410493202432>"
         self.s = "Steam"

@@ -4,6 +4,7 @@ from datetime import datetime
 from pytz import timezone
 import time
 from cogs.utils import checks
+import platform, os
 
 # TODO remove when no longer needed
 import requests, bs4
@@ -153,6 +154,33 @@ class Misc:
                 await self.bot.say(msgs)
         except Exception as e:
             await self.bot.say("Error [{}]: {}".format(type(e), e))
+
+    @commands.command()
+    @checks.is_owner()
+    async def system(self):
+        os_name = platform.system()
+
+        if os_name == "Linux":
+            res = os.popen('vcgencmd measure_temp').readline()
+            temp = res.replace("temp=", "").replace("'C\n", "")
+
+            uptime = os.popen('uptime').readline()
+        elif os_name == "Windows":
+            temp = "Bot running on Windows - System Temperature N/A"
+            uptime = "Bot running on Windows - System Uptime N/A"
+        else:
+            temp = "Error retrieving temperature."
+            uptime = "Error retrieving uptime"
+
+        embed = discord.Embed(title="System Status",
+                              colour=discord.Colour.green())
+
+        embed.add_field(name="Temperature",
+                        value=temp)
+        embed.add_field(name="Uptime",
+                        value=uptime)
+
+        await self.bot.say(embed=embed)
 
 
 def secs_to_days(seconds):

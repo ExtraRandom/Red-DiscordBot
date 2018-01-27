@@ -2,10 +2,7 @@
 __pycache__
 *.exe
 *.dll
-update - Copy.bat
 .idea/*
 helpers/tokens.py
-run.bat
 data/*
 data/red/*
-helpers/steam_id2.json
