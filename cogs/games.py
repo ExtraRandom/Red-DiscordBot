@@ -4,7 +4,7 @@ from datetime import datetime
 
 from helpers import tokens as t, id_json, games_json
 
-import aiohttp
+import aiohttp  # TODO Use requests instead of AIOHTTP
 from discord.ext import commands
 import discord
 
@@ -936,7 +936,7 @@ def battle_net_parse_user(name):
             return 1
 
     elif len(name.split("#")) == 2:
-        # It be a battle tag
+        # It's a battle tag
         bnet = name
     else:
         # Check its not an already formatted id (i.e. if myself was used on d2 command)
