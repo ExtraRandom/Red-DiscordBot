@@ -4,7 +4,7 @@ from datetime import datetime
 
 from helpers import tokens as t, id_json, games_json
 
-import aiohttp  # TODO Use requests instead of AIOHTTP
+import aiohttp
 from discord.ext import commands
 import discord
 
@@ -29,6 +29,7 @@ class Games:
         self.er_id = "<@92562410493202432>"
         self.s = "Steam"
         self.b = "BattleNet"
+        self.error_msg = "Server returned error 500 (Internal server error).\nTry again later."
 
     @commands.command(name="mc")
     async def minecraft_ip(self, ip: str):
@@ -243,6 +244,7 @@ class Games:
         """Get Payday 2 Stats, Mention someone to get their stats
         E.g. "?pd2" for personal stats, "?pd2 @SomeUser" for SomeUser's stats
         """
+
         run = True
         user_id = parse_user(ctx.message)
         steam_id = id_json.read(user_id, self.s)
@@ -267,6 +269,10 @@ class Games:
                        "&steamid={}&format=json" \
                        "".format(t.web_api, steam_id)
                 # print("link ", link)
+
+                if check_steam_link_works(link) == False:
+                    await self.bot.say(self.error_msg)
+                    return
 
                 with aiohttp.ClientSession() as session:
                     async with session.get(link)as resp:
@@ -388,6 +394,10 @@ class Games:
                 link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=730&key={}" \
                        "&steamid={}&format=json" \
                        "".format(t.web_api, steam_id)
+
+                if check_steam_link_works(link) == False:
+                    await self.bot.say(self.error_msg)
+                    return
 
                 with aiohttp.ClientSession() as session:
                     async with session.get(link)as resp:
@@ -925,6 +935,13 @@ class Games:
                                                                                               user, "BattleNet")
                                                                                            )
                            )
+
+
+def check_steam_link_works(link):
+    test = requests.get(link)
+    if test.status_code == 500:  # print("Steam API Request Failed (500)")
+        return False
+    return True
 
 
 def battle_net_parse_user(name):

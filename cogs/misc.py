@@ -5,22 +5,11 @@ from pytz import timezone
 import time
 from cogs.utils import checks
 import platform, os
-import asyncio
-import json
-import requests
 
 
 class Misc:
     def __init__(self, bot):
-        # self.client = discord.Client
         self.bot = bot
-
-        self.bg_task = self.bot.loop.create_task(self.chrono_gg())
-
-        self.chrono_last_date_sent = datetime(2000, 1, 1)
-
-        # self.
-
 
     @commands.command()
     async def times(self):
@@ -190,80 +179,9 @@ class Misc:
 
         await self.bot.say(embed=embed)
 
-    async def chrono_gg(self):
-
-        def get_id_channel(bot, c_name):
-            chans = []
-            servers = bot.servers
-            for server in servers:
-                channels = server.channels
-
-                for chan in channels:
-                    # print(chan.name, chan.type, chan.id)
-                    if chan.name == c_name:
-                        # print(chan.name, "is the thing")
-                        chans.append(chan)
-
-            return chans
-
-        # Wait for bot to finish starting before checking
-        await asyncio.sleep(5)
-
-        store_link = "https://www.chrono.gg/"
-        channel_ids = get_id_channel(self.bot, "deals")
-
-        while True:
-            today = datetime.utcnow()
-            if today.hour == 19 and today.minute >= 20:
-                # print("checking")
-
-                if self.chrono_last_date_sent != datetime(today.year, today.month, today.day, 10, 00, 00, 00):
-                    # print("Not updated today")
-
-                    self.chrono_last_date_sent = datetime(today.year, today.month, today.day, 10, 00, 00, 00)
-
-                    name, discount, sale_price, normal_price, image, start_date, end_date = await fetch_chrono_data()
-                    # print(name, discount, sale_price, normal_price, image, start_date, end_date)
-
-                    embed = discord.Embed(title="Chrono.gg Deal",
-                                          colour=discord.Colour.dark_green(),
-                                          description="Deal of {}".format(str(today).split(" ")[0])
-                                          )
-
-                    embed.set_thumbnail(url=image)
-
-                    embed.add_field(name="{}".format(name),
-                                    value="{}".format("Sale Price: ${} ~~${}~~\n"
-                                                      "Discount: {}\n"
-                                                      "".format(sale_price, normal_price, discount)))
-                    embed.add_field(name="Link",
-                                    value="{}".format(store_link))
-
-                    for c_id in channel_ids:
-                        await self.bot.send_message(c_id, embed=embed)
-
-                else:
-                    pass
-                    # print("Already updated today")
-
-            else:
-                pass
-                # print("not check time", today)
-
-            await asyncio.sleep(5 * 60)
-
 
 def secs_to_days(seconds):
     return str(seconds / 86400).split(".")[0]
-
-
-async def fetch_chrono_data():
-    # print("fetching")
-    url = "https://api.chrono.gg/sale"
-    resp = requests.get(url)  # print(resp.text)
-    data = json.loads(resp.text)
-    return data["name"], data["discount"], data["sale_price"], data["normal_price"],\
-        data["og_image"], data["start_date"], data["end_date"]
 
 
 def setup(bot):
