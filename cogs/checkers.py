@@ -56,10 +56,11 @@ class Main:
 
                     embed.set_thumbnail(url=image)
 
-                    embed.add_field(name="{}".format(name),
-                                    value="Game: {}".format("Sale Price: ${} ~~${}~~\n"
-                                                            "Discount: {}\n"
-                                                            "".format(sale_price, normal_price, discount)))
+                    embed.add_field(name="Game: {}".format(name),
+                                    value="Sale Price: ${} ~~${}~~\n"
+                                          "Discount: {}\n"
+                                          "".format(sale_price, normal_price, discount))
+
                     embed.add_field(name="Links",
                                     value="{}\n"
                                           "{}".format(store_link, steam_link))
