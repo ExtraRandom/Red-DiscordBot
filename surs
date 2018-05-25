@@ -1,0 +1,12 @@
+#!/bin/bash
+echo "Stopping Bot"
+cd $DIR
+sudo systemctl stop discordbot.service
+echo "Updating from GitHub"
+git pull
+echo "Updating Requirements"
+sudo pip3 install -U -r requirements.txt
+echo "Restarting Bot"
+sudo systemctl restart discordbot.service
+cd ..
+echo "All Done!"

@@ -1,10 +1,13 @@
 from discord.ext import commands
 import discord
-from datetime import datetime, date, timedelta
+from datetime import datetime  # , date, timedelta
 from pytz import timezone
 import time
 from cogs.utils import checks
-import platform, os
+import platform
+import os
+
+import subprocess
 
 
 class Misc:
@@ -178,6 +181,11 @@ class Misc:
                         value=uptime)
 
         await self.bot.say(embed=embed)
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def update(self):
+        subprocess.call(["./surs"])
 
 
 def secs_to_days(seconds):

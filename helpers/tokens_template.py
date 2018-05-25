@@ -20,4 +20,10 @@ d2_api = ""
 
 """
 
+
+itad_api = ""
+"""
+
+"""
+
 # TODO Remember to update these if anything changes

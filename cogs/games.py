@@ -3,7 +3,6 @@ import logging
 from datetime import datetime
 
 from helpers import tokens as t, id_json
-# from helpers import steam
 
 import aiohttp
 from discord.ext import commands
@@ -787,6 +786,7 @@ def pubg_find(mode, region, data, season):
                     break
     return result
 """
+
 
 def get_top5(data):
     """Get top 5 stats from given data"""
