@@ -1,2 +1,2 @@
-'C:\Program Files (x86)\Python36-32\python.exe' pip install -U -r requirements.txt
+python -m pip install -U -r I:\Python\ForRed\Red-DiscordBot\requirements.txt
 pause

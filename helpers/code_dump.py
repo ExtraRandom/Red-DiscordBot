@@ -1072,7 +1072,6 @@ def gadget_read(data):
 
     @commands.command(aliases=["hb", "yogshb"], hidden=True)
     async def yogs(self):
-        # TODO remove once this bundle ends
         try:
             url = "https://www.humblebundle.com/yogscast-jingle-jam-2017"
             res = requests.get(url)
@@ -1094,3 +1093,371 @@ def gadget_read(data):
             print("Error in yogs command: {}".format(e))
             await self.bot.say("Error getting data.")
             return
+
+
+
+
+=======================================
+
+    @commands.command(hidden=True)
+    async def pubg(self, bg_name: str, region="eu"):
+        """Get PUBG Stats (Use in-game name)
+
+        Region is Optional Argument, Defaults to EU
+
+        Regions: AS, NA, SEA, EU, OC, SA, KRJP, All
+        """
+
+        msg = await self.bot.say("Fetching PUBG Stats for {}".format(bg_name))
+
+        region = region.lower()
+
+        key = t.pubg_api
+        url_base = "https://api.pubgtracker.com/v2/profile/pc/"
+        url = "{}{}".format(url_base, bg_name)
+        headers = {
+            'content-type': "application/json",
+            'trn-api-key': key,
+        }
+
+        response = requests.request("GET", url, headers=headers)
+
+        # print(response.text)
+        data = json.loads(response.text)
+        # print(data)
+
+        working = True
+        reason = ""
+
+        try:
+            if "message" in data:
+                working = False
+                reason = data['message']
+        except KeyError:
+            reason += "Error in PUBG Command (Debug Code: 1) "
+            pass
+
+        try:
+            if "error" in data:
+                working = False
+                reason = data['error']
+        except KeyError:
+            reason += "Error in PUBG Command (Debug Code: 2) "
+            pass
+
+        if working:
+            season = data['seasonDisplay']
+            filter_season = data['defaultSeason']
+            avatar = data['Avatar']
+            properName = data['PlayerName']
+            update_time = str(data['LastUpdated'])
+            last_updated = update_time.split(".")[0].replace("T", " ")
+            site_link = "https://pubgtracker.com/profile/pc/{}?region={}".format(properName, region)
+
+            solo_n = pubg_find("solo", region, data, filter_season)
+            duo_n = pubg_find("duo", region, data, filter_season)
+            squad_n = pubg_find("squad", region, data, filter_season)
+
+            embed = discord.Embed(title="{} PUBG Stats for {}".format(region.upper(), properName),
+                                  description=season,
+                                  colour=discord.Colour.gold(),
+                                  url=site_link)
+
+            if solo_n is not None:
+                solo_data = pubg_filter(data, solo_n)
+                embed.add_field(name="Solo",
+                                value="**Kill Death Ratio:** {}\n"
+                                      "**Kills:** {}\n"
+                                      "**Played:** {}\n"
+                                      "**Wins:** {}\n"
+                                      "**Rank:** {}\n"
+                                      "**Top 10's:** {}"
+                                      "".format(solo_data[0], solo_data[1], solo_data[2], solo_data[3], solo_data[4],
+                                                solo_data[5]))
+            else:
+                embed.add_field(name="Solo", value="No Data for Solo Matches")
+
+            if duo_n is not None:
+                duo_data = pubg_filter(data, duo_n)
+                embed.add_field(name="Duo",
+                                value="**Kill Death Ratio:** {}\n"
+                                      "**Kills:** {}\n"
+                                      "**Played:** {}\n"
+                                      "**Wins:** {}\n"
+                                      "**Rank:** {}\n"
+                                      "**Top 10's:** {}"
+                                      "".format(duo_data[0], duo_data[1], duo_data[2], duo_data[3], duo_data[4],
+                                                duo_data[5]))
+            else:
+                embed.add_field(name="Duo", value="No Data for Duo Matches")
+
+            if squad_n is not None:
+                squad_data = pubg_filter(data, squad_n)
+
+                embed.add_field(name="Squad",
+                                value="**Kill Death Ratio:** {}\n"
+                                      "**Kills:** {}\n"
+                                      "**Played:** {}\n"
+                                      "**Wins:** {}\n"
+                                      "**Rank:** {}\n"
+                                      "**Top 10's:** {}"
+                                      "".format(squad_data[0], squad_data[1], squad_data[2], squad_data[3],
+                                                squad_data[4], squad_data[5]))
+            else:
+                embed.add_field(name="Squad", value="No Data for Squad Matches")
+
+            embed.set_thumbnail(url=avatar)
+            embed.set_footer(text="Stats Last Updated: {}".format(last_updated))
+
+            await self.bot.delete_message(msg)
+            await self.bot.say(embed=embed)
+
+        else:  # if not working
+            await self.bot.edit_message(msg, "Error occurred whilst getting data. Check for typos or try again later."
+                                             "\nReason: {}".format(reason))
+
+
+    @commands.command(pass_context=True, hidden=True)
+    async def pd2(self, ctx):
+        """Get Payday 2 Stats, Mention someone to get their stats
+        E.g. "?pd2" for personal stats, "?pd2 @SomeUser" for SomeUser's stats
+        """
+
+        run = True
+        user_id = parse_user(ctx.message)
+        steam_id = id_json.read(user_id, self.s)
+        username = await steam_from_id(steam_id)
+
+        if user_id is not None:
+            user = "<@" + user_id + ">"
+        else:
+            await self.bot.say("Error: '{}' is not a user. Try mentioning the desired user to get their stats"
+                               ", or only type the command without anything following it you get your own stats."
+                               "".format(" ".join(ctx.message.content.split(" ")[1:])))
+            return
+
+        if steam_id == 0:
+            await self.bot.say("Error: User {} has no Steam ID associated to them. {} plz fix!".format(user,
+                                                                                                       self.er_id))
+            return
+
+        if not t.web_api == "" and run:
+            try:
+                link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=218620&key={}" \
+                       "&steamid={}&format=json" \
+                       "".format(t.web_api, steam_id)
+                # print("link ", link)
+
+                if check_steam_link_works(link) == False:
+                    await self.bot.say(self.error_msg)
+                    return
+
+                with aiohttp.ClientSession() as session:
+                    async with session.get(link)as resp:
+                        data = await resp.text()  # resp.json()
+
+                        stats = json.loads(data)['playerstats']['stats']
+
+                        try:
+                            heist_s = games_json.find_stat("heist_success", stats)
+                        except KeyError:
+                            await self.bot.say("Error: User {} ({} on Steam) does not own Payday 2".format(user,
+                                                                                                           username))
+                            return
+
+                        if heist_s == -1:
+                            await self.bot.say("Error occurred whilst reading PD2 stats. (Code 1)")
+                            print("PD2ERROR")
+                            return
+
+                        heist_f = games_json.find_stat("heist_failed", stats)
+                        kills = games_json.get_stats("pd2", "kills", stats)
+                        diffs = games_json.get_stats("pd2", "diffs", stats)
+
+                        most_used_gun, most_used_kills, most_used_gadget, most_used_gadget_uses, \
+                        most_used_armor, most_used_armor_uses = games_json.item_stats(stats)
+
+                        fbi = kills[1] + kills[2] + kills[3]
+                        cop_swat = kills[0] + kills[29] + kills[7] + kills[6] + kills[5]
+                        tank_kills = kills[13] + kills[23] + kills[24] + kills[22] + kills[19]
+                        gang_mob_kills = kills[16] + kills[15] + kills[9]
+                        civ_kills = kills[18] + kills[17]
+                        kills_shield = kills[11]
+                        kills_sniper = kills[10]
+                        kills_cloaker = kills[12]
+
+                        total_kills = 0
+                        for i in range(0, len(kills)):
+                            total_kills = total_kills + kills[i]
+
+                        other_kills = total_kills - (fbi + cop_swat + tank_kills + gang_mob_kills + civ_kills +
+                                                     kills_cloaker + kills_shield + kills_sniper)
+
+                        embed = discord.Embed(title="PD2 Stats for " + username,
+                                              colour=discord.Colour.blue())
+                        # ,url="http://pd2stats.com/profiles/" + user_id)
+                        # That website no longer seems to work :/
+
+                        embed.add_field(name="Heists", value="**Completed:** {}\n"
+                                                             "**Failed:** {}"
+                                                             "".format(heist_s, heist_f))
+
+                        embed.add_field(name="Difficulty", value="**Normal:** {}\n"
+                                                                 "**Hard:** {}\n"
+                                                                 "**Very Hard:** {}\n"
+                                                                 "**Overkill:** {}\n"
+                                                                 "**Mayhem:** {}\n"
+                                                                 "**Deathwish:** {}\n"
+                                                                 "**One Down:** {}"
+                                                                 "".format(diffs[0], diffs[1], diffs[2], diffs[3]
+                                                                           , diffs[5], diffs[4], diffs[6]))
+
+                        embed.add_field(name="Kills", value="**FBI:** {}\n"
+                                                            "**Cops/SWAT:** {}\n"
+                                                            "**Shield:** {}\n"
+                                                            "**Sniper:** {}\n"
+                                                            "**Cloaker:** {}\n"
+                                                            "**Bulldozer:** {}\n"
+                                                            "**Gang/Mob:** {}\n"
+                                                            "**Civilian:** {}\n"
+                                                            "**Other:** {}"
+                                                            "".format(fbi, cop_swat, kills_shield, kills_sniper,
+                                                                      kills_cloaker, tank_kills, gang_mob_kills,
+                                                                      civ_kills, other_kills))
+                        embed.add_field(name="Favourite Gun",
+                                        value="**{}**\n{} kills".format(most_used_gun, most_used_kills))
+                        embed.add_field(name="Favourite Gadget",
+                                        value="**{}**\n{} uses".format(most_used_gadget, most_used_gadget_uses))
+                        embed.add_field(name="Favourite Armor",
+                                        value="**{}**\n{} uses".format(most_used_armor, most_used_armor_uses))
+
+                        embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
+
+                        try:
+                            await self.bot.say(embed=embed)
+                        except discord.HTTPException:
+                            await self.bot.say("I need the `Embed links` permission "
+                                               "to send this")
+
+            except KeyError as e:
+                log.warn("KeyError: {}".format(e))
+                await self.bot.say("Error: User {} has no Steam ID associated to them or an error occurred fetching "
+                                   "stats.".format(user))
+        else:
+            await self.bot.say("This command is disabled currently. Ask the bot owner to add a Steam WebAPI key in "
+                               "tokens.py for it to be enabled")
+
+
+    @commands.command(pass_context=True, hidden=True)
+    async def csgo(self, ctx):
+        """Get CS:GO Stats, Mention someone to get their stats
+        E.g. "?csgo" for personal stats, "?csgo @SomeUser" for SomeUser's stats
+        """
+        user_id = parse_user(ctx.message)
+        steam_id = id_json.read(user_id, self.s)
+        username = await steam_from_id(steam_id)
+        if user_id is not None:
+            user = "<@" + user_id + ">"
+        else:
+            await self.bot.say("Error: '{}' is not a user. Try mentioning the desired user to get their stats"
+                               ", or only type the command without anything following it you get your own stats."
+                               "".format(" ".join(ctx.message.content.split(" ")[1:])))
+            return
+
+        if steam_id == 0:
+            await self.bot.say("Error: User {} has no Steam ID associated to them.".format(user))
+            return
+
+        if not t.web_api == "":
+            try:
+                link = "http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=730&key={}" \
+                       "&steamid={}&format=json" \
+                       "".format(t.web_api, steam_id)
+
+                if check_steam_link_works(link) == False:
+                    await self.bot.say(self.error_msg)
+                    return
+
+                with aiohttp.ClientSession() as session:
+                    async with session.get(link)as resp:
+                        data = await resp.text()  # resp.json()
+                        # print(link)
+                        stats = json.loads(data)['playerstats']['stats']
+
+                        kills = games_json.get_stats("csgo", "kills", stats)
+                        mapwins = games_json.get_stats("csgo", "maps", stats)
+                        general = games_json.get_stats("csgo", "general", stats)
+                        headshots = games_json.find_stat("total_kills_headshot", stats)
+
+                        gdata = games_json.read_json_for_game("CSGO")
+
+                        kd_ratio = general[0] / general[1]
+                        kd_ratio = str(kd_ratio)[:4]
+
+                        top_guns = get_top5(kills)
+                        top_maps = get_top5(mapwins)
+
+                        embed = discord.Embed(title="CS:GO Stats for {}".format(username),
+                                              colour=discord.Colour.dark_green())
+
+                        embed.add_field(name="General", value="**Total Kills:** {}\n"
+                                                              "**Total Deaths:** {}\n"
+                                                              "**K/D Ratio:** {}\n"
+                                                              "**Bombs Planted:** {}\n"
+                                                              "**Bombs Defused:** {}\n"
+                                                              "**Hostages Rescued:** {}"
+                                                              "".format(general[0], general[1], kd_ratio,
+                                                                        general[2], general[3], general[4]))
+
+                        embed.add_field(name="Top Guns", value="**1:** {} - {} kills\n"
+                                                               "**2:** {} - {} kills\n"
+                                                               "**3:** {} - {} kills\n"
+                                                               "**4:** {} - {} kills\n"
+                                                               "**5:** {} - {} kills\n"
+                                                               "".format(str(gdata['Kills'][top_guns[0]]).upper(),
+                                                                         kills[top_guns[0]],
+                                                                         str(gdata['Kills'][top_guns[1]]).upper(),
+                                                                         kills[top_guns[1]],
+                                                                         str(gdata['Kills'][top_guns[2]]).upper(),
+                                                                         kills[top_guns[2]],
+                                                                         str(gdata['Kills'][top_guns[3]]).upper(),
+                                                                         kills[top_guns[3]],
+                                                                         str(gdata['Kills'][top_guns[4]]).upper(),
+                                                                         kills[top_guns[4]]
+                                                                         ))
+
+                        embed.add_field(name="Top Maps", value="**1:** {} - {} wins\n"
+                                                               "**2:** {} - {} wins\n"
+                                                               "**3:** {} - {} wins\n"
+                                                               "**4:** {} - {} wins\n"
+                                                               "**5:** {} - {} wins\n"
+                                                               "".format(str(gdata['Maps'][top_maps[0]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[0]],
+                                                                         str(gdata['Maps'][top_maps[1]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[1]],
+                                                                         str(gdata['Maps'][top_maps[2]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[2]],
+                                                                         str(gdata['Maps'][top_maps[3]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[3]],
+                                                                         str(gdata['Maps'][top_maps[4]]).split("_")[1]
+                                                                         .capitalize(), mapwins[top_maps[4]]))
+
+                        percent = (general[5] / general[6]) * 100
+                        embed.add_field(name="Accuracy", value="**Shots Hit:** {}\n"
+                                                               "**Shots Fired:** {}\n"
+                                                               "**Accuracy Percent:** {}%\n"
+                                                               "**Headshots:** {}"
+                                                               "".format(general[5], general[6],
+                                                                         str(percent).split(".")[0], headshots))
+
+                        embed.set_footer(text="As of {} UTC".format(datetime.utcnow()))
+
+                        try:
+                            await self.bot.say(embed=embed)
+                        except discord.HTTPException:
+                            await self.bot.say("I need the `Embed links` permission "
+                                               "to send this")
+            except KeyError as e:
+                await self.bot.say("Error: User {} ({} on Steam) does not own CS:GO.".format(user,
+                                                                                             username))
+                log.warn("Key Error: {}".format(e))

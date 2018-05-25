@@ -9,3 +9,4 @@ requests
 mcstatus
 aiohttp
 pytz
+git+git://github.com/ExtraRandom/Game_Stores_API
