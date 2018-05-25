@@ -279,11 +279,11 @@ class Games:
                 price = "{}\nCurrent Discount: {}".format(price, results[i]['discount'])
 
             embed.add_field(name="{}".format(results[i]['title']),
-                            value="Released: {0}\n"
-                                  "Steam Price: {1}\n"
-                                  "Steam URL: {2}\n"
-                                  "App ID: {3}"
-                                  "".format(price, results[i]['release_date'], steam_link, app_id))
+                            value="Released: {}\n"
+                                  "Steam Price: {}\n"
+                                  "Steam URL: {}\n"
+                                  "App ID: {}"
+                                  "".format(results[i]['release_date'], price,  steam_link, app_id))
 
         await self.bot.say(embed=embed)
 
