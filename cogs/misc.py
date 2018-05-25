@@ -182,10 +182,10 @@ class Misc:
 
         await self.bot.say(embed=embed)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=["restart", "u-r"])
     @checks.is_owner()
     async def update(self):
-        subprocess.call(["./surs"])
+        subprocess.call(["sudo", "./surs"])
 
 
 def secs_to_days(seconds):
