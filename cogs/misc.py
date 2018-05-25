@@ -74,7 +74,7 @@ class Misc:
 
         await self.bot.say(embed=embed)
 
-    @commands.command(hidden=True, aliases=["who_where", "ww", "who"])
+    @commands.command(hidden=True, aliases=["who_where", "ww", "who", "where"])
     @checks.is_owner()
     async def where_who(self):
         """Admin Only Command"""

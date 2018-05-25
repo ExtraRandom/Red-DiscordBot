@@ -6,6 +6,7 @@ BOT="red.py"
 HELP="Args: git, bot, kill, yt, u-r (update requirements)"
 # HELP2="Legacy Args: bot_old, kill_old"
 # gp and tp commands only need to be used if monitor.bash is updated
+
 if [ -z "$*" ]; then
 	echo $HELP
 	# echo $HELP2
@@ -15,6 +16,18 @@ else
         git pull
         cd ..
 		echo "Run ./run to update 'sys' file"
+	elif [ "$1" = "surs" ]; then
+	    echo "Stopping Bot"
+	    cd $DIR
+	    sudo systemctl stop discordbot.service
+	    echo "Updating from GitHub"
+	    git pull
+	    echo "Updating Requirements"
+	    pip3 install -U -r requirements.txt
+	    echo "Restarting Bot"
+	    sudo systemctl restart discordbot.service
+	    cd ..
+	    echo "All Done!"
 	elif [ "$1" = "yt" ]; then
 		sudo -H pip install --upgrade youtube-dl
 	elif [ "$1" = "u-r" ]; then
@@ -31,16 +44,16 @@ else
 		pkill -f -e monitor.bash
 		pkill -f -e red.py
 	#######
-	elif [ "$1" = "bot_old" ]; then
-		cd $DIR
-        python3 $BOT &
-		cd ..
-	elif [ "$1" = "kill_old" ]; then
-        pkill -f -e red.py
-	elif [ "$1" = "gp" ]; then # Give Permission to monitor
-		chmod 777 ./Red-DiscordBot/monitor.bash
-	elif [ "$1" = "tp" ]; then # Take Permission from monitor
-		chmod 644 ./Red-DiscordBot/monitor.bash
+#	elif [ "$1" = "bot_old" ]; then
+	#    cd $DIR
+    #    python3 $BOT &
+    #    cd ..
+	#elif [ "$1" = "kill_old" ]; then
+    #    pkill -f -e red.py
+	#elif [ "$1" = "gp" ]; then # Give Permission to monitor
+#		chmod 777 ./Red-DiscordBot/monitor.bash
+#	elif [ "$1" = "tp" ]; then # Take Permission from monitor
+#		chmod 644 ./Red-DiscordBot/monitor.bash
 	######
     else
         echo $HELP

@@ -1,3 +1,4 @@
+#!/bin/bash
 FILE=Red-DiscordBot/sys
 if [ -f $FILE ]; then
    echo "Found new 'sys' file, moving now"
