@@ -182,7 +182,7 @@ class Misc:
 
         await self.bot.say(embed=embed)
 
-    @commands.command(hidden=True, aliases=["restart", "u-r"])
+    @commands.command(hidden=True, aliases=["u-r"])
     @checks.is_owner()
     async def update(self):
         subprocess.call(["sudo", "./surs"])
