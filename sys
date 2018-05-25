@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 0.6
+# Version 0.7
 
 DIR="Red-DiscordBot"
 BOT="red.py"
@@ -23,7 +23,7 @@ else
 	    echo "Updating from GitHub"
 	    git pull
 	    echo "Updating Requirements"
-	    pip3 install -U -r requirements.txt
+	    sudo pip3 install -U -r requirements.txt
 	    echo "Restarting Bot"
 	    sudo systemctl restart discordbot.service
 	    cd ..
